@@ -1,18 +1,23 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  User
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
 import { generiereIndividuellenCode } from '@/lib/utils/generateCode';
 
+// Lazy-load Firebase Auth only when admin login is needed
+let firebaseAuthPromise: Promise<typeof import('firebase/auth')> | null = null;
+let firebaseAppPromise: Promise<{ auth: import('firebase/auth').Auth }> | null = null;
+
+function getFirebaseAuth() {
+  if (!firebaseAppPromise) {
+    firebaseAppPromise = import('@/lib/firebase').then(m => ({ auth: m.auth }));
+  }
+  if (!firebaseAuthPromise) {
+    firebaseAuthPromise = import('firebase/auth');
+  }
+  return Promise.all([firebaseAppPromise, firebaseAuthPromise]);
+}
+
 interface AuthContextType {
-  // Code-based user auth
   isAuthenticated: boolean;
   username: string;
   userCode: string;
@@ -21,9 +26,8 @@ interface AuthContextType {
   checkAndLoadUser: (code: string) => Promise<string | null>;
   logoutUser: () => void;
 
-  // Firebase admin auth
   isAdmin: boolean;
-  adminUser: User | null;
+  adminUser: { email: string } | null;
   adminLoading: boolean;
   loginAdmin: (email: string, password: string) => Promise<void>;
   logoutAdmin: () => Promise<void>;
@@ -36,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState('');
   const [userCode, setUserCode] = useState('');
 
-  const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [adminUser, setAdminUser] = useState<{ email: string } | null>(null);
   const [adminLoading, setAdminLoading] = useState(true);
   const isAdmin = !!adminUser;
 
@@ -45,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const savedUsername = localStorage.getItem('username');
     let savedCode = localStorage.getItem('userCode');
 
-    // Migration: old "user_ABC123" to "ABC123"
     if (savedCode && savedCode.startsWith('user_')) {
       savedCode = savedCode.replace('user_', '');
       localStorage.setItem('userCode', savedCode);
@@ -56,24 +59,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserCode(savedCode);
       setIsAuthenticated(true);
     }
+
+    // Check admin from localStorage
+    const savedAdmin = localStorage.getItem('adminEmail');
+    if (savedAdmin) {
+      setAdminUser({ email: savedAdmin });
+    }
+    setAdminLoading(false);
   }, []);
 
-  // Firebase Auth listener for admin
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAdminUser(user);
-      setAdminLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
+  // Check and load user via API
   const checkAndLoadUser = useCallback(async (code: string): Promise<string | null> => {
     if (!code || code.length < 6) return null;
     try {
-      const userDoc = await getDoc(doc(db, 'users', code));
-      if (userDoc.exists()) {
-        return userDoc.data().username;
-      }
+      const res = await fetch(`/api/users?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (data.exists) return data.username;
       return null;
     } catch (error) {
       console.error('Fehler beim Laden des Users:', error);
@@ -81,11 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Save user via API
   const saveUser = useCallback(async (code: string, name: string) => {
     try {
-      await setDoc(doc(db, 'users', code), {
-        username: name,
-        createdAt: serverTimestamp()
+      await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, username: name })
       });
     } catch (error) {
       console.error('Fehler beim Speichern des Users:', error);
@@ -120,12 +123,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   }, []);
 
+  // Admin login via Firebase Auth (lazy loaded)
   const loginAdmin = useCallback(async (email: string, password: string) => {
+    const [{ auth }, { signInWithEmailAndPassword }] = await getFirebaseAuth();
     await signInWithEmailAndPassword(auth, email, password);
+    localStorage.setItem('adminEmail', email);
+    setAdminUser({ email });
   }, []);
 
   const logoutAdmin = useCallback(async () => {
-    await signOut(auth);
+    try {
+      const [{ auth }, { signOut }] = await getFirebaseAuth();
+      await signOut(auth);
+    } catch {
+      // Ignore signout errors
+    }
+    localStorage.removeItem('adminEmail');
+    setAdminUser(null);
   }, []);
 
   return (

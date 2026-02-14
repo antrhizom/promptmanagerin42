@@ -5,7 +5,8 @@ import {
   PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN,
   OUTPUT_FORMATE,
   ANWENDUNGSFAELLE,
-  ROLLEN
+  ROLLEN,
+  BILDUNGSSTUFEN
 } from '@/lib/constants';
 import styles from './FilterBar.module.css';
 
@@ -43,7 +44,7 @@ export function FilterBar({
 
       <div className={styles.grid}>
         <div className={styles.searchWrapper}>
-          <span className={styles.searchIcon}>&#128269;</span>
+          <span className={styles.searchIcon}>🔍</span>
           <input
             className={styles.searchInput}
             type="text"
@@ -105,6 +106,17 @@ export function FilterBar({
           <option value="">Alle Rollen</option>
           {ROLLEN.map(r => (
             <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+
+        <select
+          className={styles.select}
+          value={filters.filterBildungsstufe}
+          onChange={(e) => onFilterChange('filterBildungsstufe', e.target.value)}
+        >
+          <option value="">Alle Bildungsstufen</option>
+          {BILDUNGSSTUFEN.map(b => (
+            <option key={b} value={b}>{b}</option>
           ))}
         </select>
 

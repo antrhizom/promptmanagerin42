@@ -56,5 +56,6 @@ export interface FilterState {
   filterAnwendungsfall: string;
   filterTag: string;
   filterRolle: string;
+  filterBildungsstufe: string;
   sortierung: SortOption;
 }

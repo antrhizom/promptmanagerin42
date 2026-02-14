@@ -11,6 +11,7 @@ const DEFAULT_FILTERS: FilterState = {
   filterAnwendungsfall: '',
   filterTag: '',
   filterRolle: '',
+  filterBildungsstufe: '',
   sortierung: 'aktuell'
 };
 
@@ -85,7 +86,17 @@ export function useFilters(prompts: Prompt[]) {
         (typeof prompt.erstelltVonRolle === 'string' &&
           prompt.erstelltVonRolle.split(',').map(r => r.trim()).includes(filters.filterRolle));
 
-      return suchMatch && plattformMatch && outputMatch && anwendungMatch && tagMatch && rolleMatch;
+      // Bildungsstufe: match with or without emoji prefix, comma-separated
+      const bildungsstufeMatch = !filters.filterBildungsstufe || (() => {
+        const bs = prompt.bildungsstufe;
+        if (!bs) return false;
+        const filterVal = filters.filterBildungsstufe.toLowerCase();
+        // Split comma-separated values and check each
+        const values = typeof bs === 'string' ? bs.split(',').map(v => v.trim().toLowerCase()) : [String(bs).toLowerCase()];
+        return values.some(v => v.includes(filterVal) || filterVal.includes(v));
+      })();
+
+      return suchMatch && plattformMatch && outputMatch && anwendungMatch && tagMatch && rolleMatch && bildungsstufeMatch;
     });
   }, [prompts, filters]);
 

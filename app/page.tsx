@@ -107,7 +107,7 @@ export default function Home() {
       format: 'filterOutputFormat',
       anwendungsfall: 'filterAnwendungsfall',
       rolle: 'filterRolle',
-      bildungsstufe: 'suchbegriff',
+      bildungsstufe: 'filterBildungsstufe',
       suchbegriff: 'suchbegriff',
       tag: 'filterTag',
     };
