@@ -18,15 +18,34 @@ export function usePrompts() {
     let cancelled = false;
     let unsubscribe: (() => void) | null = null;
 
-    const promptsRef = collection(db, 'prompts');
-    const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
-
-    // Strategy 1: Erst getDocs (einfacher HTTP GET - funktioniert immer)
-    async function loadInitial() {
+    // Strategy 1: Server-API Route (umgeht Netzwerk-Blockaden)
+    async function loadViaAPI() {
       try {
-        console.log('[usePrompts] Loading via getDocs...');
-        const snapshot = await getDocs(q);
+        console.log('[usePrompts] Loading via API route...');
+        const res = await fetch('/api/prompts');
+        if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+        const data = await res.json();
         if (cancelled) return;
+
+        console.log('[usePrompts] API SUCCESS:', data.prompts?.length, 'documents');
+        setPrompts(data.prompts || []);
+        setLoading(false);
+        setError(null);
+        return true;
+      } catch (err) {
+        console.warn('[usePrompts] API route failed:', err);
+        return false;
+      }
+    }
+
+    // Strategy 2: Direct Firestore getDocs (Fallback)
+    async function loadViaDirect() {
+      try {
+        console.log('[usePrompts] Loading via direct getDocs...');
+        const promptsRef = collection(db, 'prompts');
+        const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
+        const snapshot = await getDocs(q);
+        if (cancelled) return true;
 
         console.log('[usePrompts] getDocs SUCCESS:', snapshot.size, 'documents');
         const promptsData = snapshot.docs.map(d => ({
@@ -37,21 +56,20 @@ export function usePrompts() {
         setPrompts(promptsData.filter(p => !p.deleted));
         setLoading(false);
         setError(null);
+        return true;
       } catch (err: unknown) {
-        if (cancelled) return;
-        const fireErr = err as { code?: string; message?: string };
-        console.error('[usePrompts] getDocs ERROR:', fireErr.code, fireErr.message);
-        setError(`Fehler: ${fireErr.code || 'unbekannt'} - ${fireErr.message || 'Verbindung fehlgeschlagen'}`);
-        setLoading(false);
+        console.warn('[usePrompts] getDocs failed:', err);
+        return false;
       }
     }
 
-    // Strategy 2: Dann onSnapshot für Live-Updates (WebSocket)
+    // Strategy 3: onSnapshot für Live-Updates (optional)
     function startLiveUpdates() {
       try {
+        const promptsRef = collection(db, 'prompts');
+        const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
         unsubscribe = onSnapshot(q, (snapshot) => {
           if (cancelled) return;
-          console.log('[usePrompts] onSnapshot update:', snapshot.size, 'documents');
           const promptsData = snapshot.docs.map(d => ({
             id: d.id,
             ...d.data()
@@ -60,22 +78,45 @@ export function usePrompts() {
           setPrompts(promptsData.filter(p => !p.deleted));
           setLoading(false);
           setError(null);
-        }, (err) => {
-          // onSnapshot-Fehler ist nicht kritisch wenn getDocs funktioniert hat
-          console.warn('[usePrompts] onSnapshot error (non-critical):', err.code);
+        }, () => {
+          // Non-critical: live updates not available
         });
       } catch {
-        console.warn('[usePrompts] onSnapshot setup failed (non-critical)');
+        // Non-critical
       }
     }
 
-    // Beide starten
-    loadInitial().then(() => {
+    // Timeout nach 8 Sekunden
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setError('Verbindung fehlgeschlagen. Bitte Seite neu laden.');
+        setLoading(false);
+      }
+    }, 8000);
+
+    // Lade-Reihenfolge: API → Direct → Fehler
+    async function load() {
+      const apiOk = await loadViaAPI();
+      if (cancelled) return;
+      clearTimeout(timeout);
+
+      if (!apiOk) {
+        const directOk = await loadViaDirect();
+        if (!directOk && !cancelled) {
+          setError('Firestore nicht erreichbar. Bitte prüfe deine Netzwerkverbindung.');
+          setLoading(false);
+        }
+      }
+
+      // Live-Updates versuchen (optional)
       if (!cancelled) startLiveUpdates();
-    });
+    }
+
+    load();
 
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
       if (unsubscribe) unsubscribe();
     };
   }, []);
