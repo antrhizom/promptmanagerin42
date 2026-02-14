@@ -15,10 +15,24 @@ export function usePrompts() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[usePrompts] Starting Firestore listener...');
+    console.log('[usePrompts] DB object:', typeof db, db ? 'exists' : 'MISSING');
+
+    // Timeout: if no response after 10 seconds, show error
+    const timeout = setTimeout(() => {
+      setError('Zeitüberschreitung: Firestore antwortet nicht. Bitte Seite neu laden.');
+      setLoading(false);
+      console.error('[usePrompts] TIMEOUT after 10s - no response from Firestore');
+    }, 10000);
+
     try {
-      const q = query(collection(db, 'prompts'), orderBy('erstelltAm', 'desc'));
+      const promptsRef = collection(db, 'prompts');
+      const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
+      console.log('[usePrompts] Query created, starting onSnapshot...');
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
+        console.log('[usePrompts] SUCCESS! Got', snapshot.size, 'documents');
         const promptsData = snapshot.docs.map(d => ({
           id: d.id,
           ...d.data()
@@ -28,15 +42,20 @@ export function usePrompts() {
         setLoading(false);
         setError(null);
       }, (err) => {
-        console.error('Firebase Fehler:', err.code, err.message);
+        clearTimeout(timeout);
+        console.error('[usePrompts] Firebase ERROR:', err.code, err.message);
         setError(`Firebase: ${err.code} - ${err.message}`);
         setLoading(false);
       });
 
-      return () => unsubscribe();
+      return () => {
+        clearTimeout(timeout);
+        unsubscribe();
+      };
     } catch (err) {
+      clearTimeout(timeout);
       const errorMsg = err instanceof Error ? err.message : 'Unbekannter Fehler';
-      console.error('Firebase Setup Fehler:', errorMsg);
+      console.error('[usePrompts] Setup ERROR:', errorMsg);
       setError(errorMsg);
       setLoading(false);
     }
