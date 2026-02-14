@@ -317,12 +317,40 @@
   transform: translateX(4px);
 }
 
+/* === Clickable user items === */
+.userItemLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.userItemLink:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(4px);
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 /* === User activity details === */
 .userDetails {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
   align-items: center;
+  padding-left: calc(2rem + var(--space-3));
 }
 
 .activityBadge {

@@ -199,10 +199,12 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
         <h2 className={styles.sectionTitle}>Aktivste Nutzer</h2>
         <div className={styles.rankList}>
           {stats.topUsers.map((s, i) => (
-            <Link key={s.code} href={`/?suche=${encodeURIComponent(s.displayName)}`} className={styles.rankItemLink}>
-              <span className={getRankClass(i)}>{i + 1}</span>
-              <span className={styles.rankName}>{s.displayName}</span>
-              <div className={styles.userDetails}>
+            <Link key={s.code} href={`/?suche=${encodeURIComponent(s.displayName)}`} className={styles.userItemLink}>
+              <span className={styles.userRow}>
+                <span className={getRankClass(i)}>{i + 1}</span>
+                <span className={styles.rankName}>{s.displayName}</span>
+              </span>
+              <span className={styles.userDetails}>
                 {s.bewertungen > 0 && (
                   <span className={styles.badgeBewertungen}>
                     ⭐ {s.bewertungen} Likes
@@ -218,7 +220,7 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
                     📋 {s.kopien} Kopien
                   </span>
                 )}
-              </div>
+              </span>
             </Link>
           ))}
         </div>
