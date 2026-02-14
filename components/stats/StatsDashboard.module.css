@@ -1,0 +1,371 @@
+.dashboard {
+  padding: var(--space-4) 0;
+}
+
+.title {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-2);
+}
+
+.subtitle {
+  font-size: var(--text-base);
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-8);
+}
+
+/* === Overview cards with individual colors === */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-12);
+}
+
+.overviewCard {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.overviewCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.overviewCardBlue {
+  composes: overviewCard;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f7ff 100%);
+  border-color: #bfdbfe;
+}
+
+.overviewCardBlue::before {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.overviewCardGreen {
+  composes: overviewCard;
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border-color: #a7f3d0;
+}
+
+.overviewCardGreen::before {
+  background: linear-gradient(90deg, #059669, #34d399);
+}
+
+.overviewCardAmber {
+  composes: overviewCard;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef9ec 100%);
+  border-color: #fde68a;
+}
+
+.overviewCardAmber::before {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.overviewCardPurple {
+  composes: overviewCard;
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+  border-color: #ddd6fe;
+}
+
+.overviewCardPurple::before {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+
+.overviewValue {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+.overviewLabel {
+  font-size: var(--text-sm);
+  color: var(--color-gray-500);
+  margin-top: var(--space-1);
+}
+
+/* === Sections with subtle colored backgrounds === */
+.section {
+  margin-bottom: var(--space-10);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Individual section colors */
+.sectionFormat {
+  composes: section;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+  border-color: #a7f3d0;
+}
+
+.sectionPlatform {
+  composes: section;
+  background: linear-gradient(135deg, #eef2ff 0%, #f0f4ff 100%);
+  border-color: #c7d2fe;
+}
+
+.sectionModels {
+  composes: section;
+  background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+  border-color: #ddd6fe;
+}
+
+.sectionUseCase {
+  composes: section;
+  background: linear-gradient(135deg, #fef9ec 0%, #fffbeb 100%);
+  border-color: #fde68a;
+}
+
+.sectionRole {
+  composes: section;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f7ff 100%);
+  border-color: #bfdbfe;
+}
+
+.sectionLevel {
+  composes: section;
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border-color: #fbcfe8;
+}
+
+.sectionTags {
+  composes: section;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border-color: #bbf7d0;
+}
+
+.sectionTopRated {
+  composes: section;
+  background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+  border-color: #fde68a;
+}
+
+.sectionTopUsed {
+  composes: section;
+  background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+  border-color: #fecaca;
+}
+
+.sectionTopUsers {
+  composes: section;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border-color: #ddd6fe;
+}
+
+/* === Stat grid items === */
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(4px);
+}
+
+.statItem:hover {
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.statItemName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statItemCount {
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-left: var(--space-3);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+/* === Rank list === */
+.rankList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rankItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.rankItem:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+}
+
+.rankNumber {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.rankNumberGold {
+  composes: rankNumber;
+  color: #d97706;
+}
+
+.rankNumberSilver {
+  composes: rankNumber;
+  color: #9ca3af;
+}
+
+.rankNumberBronze {
+  composes: rankNumber;
+  color: #b45309;
+}
+
+.rankNumberDefault {
+  composes: rankNumber;
+  color: var(--color-gray-400);
+}
+
+.rankName {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rankValue {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-gray-900);
+}
+
+.loading {
+  text-align: center;
+  padding: var(--space-12);
+  color: var(--color-gray-400);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-6);
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+/* === Clickable rank items === */
+.rankItemLink {
+  composes: rankItem;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.rankItemLink:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(4px);
+}
+
+/* === User activity details === */
+.userDetails {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.activityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.badgePrompts {
+  composes: activityBadge;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badgeBewertungen {
+  composes: activityBadge;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badgeKommentare {
+  composes: activityBadge;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeKopien {
+  composes: activityBadge;
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+/* === Overview card for comments === */
+.overviewCardTeal {
+  composes: overviewCard;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+  border-color: #99f6e4;
+}
+
+.overviewCardTeal::before {
+  background: linear-gradient(90deg, #0d9488, #2dd4bf);
+}
