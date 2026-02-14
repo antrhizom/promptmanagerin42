@@ -2,8 +2,6 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
 import styles from './StatsDashboard.module.css';
@@ -21,21 +19,17 @@ function getRankClass(index: number) {
 }
 
 export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
-  // Lade Nutzernamen aus der users-Collection
+  // Lade Nutzernamen über API statt Firebase Client SDK
   const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadUserNames() {
       try {
-        const snapshot = await getDocs(collection(db, 'users'));
-        const names: Record<string, string> = {};
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.username) {
-            names[doc.id] = data.username;
-          }
-        });
-        setUserNames(names);
+        const res = await fetch('/api/users');
+        const data = await res.json();
+        if (data.users) {
+          setUserNames(data.users);
+        }
       } catch (error) {
         console.error('Fehler beim Laden der Nutzernamen:', error);
       }
@@ -200,12 +194,12 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
         </div>
       </div>
 
-      {/* Top users - mit Aktivitäts-Details */}
+      {/* Top users - klickbar (filtert nach Nutzername) */}
       <div className={styles.sectionTopUsers}>
         <h2 className={styles.sectionTitle}>Aktivste Nutzer</h2>
         <div className={styles.rankList}>
           {stats.topUsers.map((s, i) => (
-            <div key={s.code} className={styles.rankItem}>
+            <Link key={s.code} href={`/?suche=${encodeURIComponent(s.displayName)}`} className={styles.rankItemLink}>
               <span className={getRankClass(i)}>{i + 1}</span>
               <span className={styles.rankName}>{s.displayName}</span>
               <div className={styles.userDetails}>
@@ -225,7 +219,7 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

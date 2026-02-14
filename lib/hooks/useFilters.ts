@@ -58,7 +58,9 @@ export function useFilters(prompts: Prompt[]) {
           prompt.titel.toLowerCase().includes(term) ||
           prompt.beschreibung.toLowerCase().includes(term) ||
           prompt.promptText.toLowerCase().includes(term) ||
-          (prompt.tags || []).some(tag => tag.toLowerCase().includes(term));
+          (prompt.tags || []).some(tag => tag.toLowerCase().includes(term)) ||
+          (prompt.erstelltVon || '').toLowerCase().includes(term) ||
+          (prompt.kommentare || []).some(k => (k.userName || '').toLowerCase().includes(term));
       }
 
       const plattformMatch = !filters.filterPlattform ||

@@ -4,13 +4,38 @@ const FIRESTORE_PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'prompt
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents`;
 
-// GET: Check if user exists by code
+// GET: Check if user exists by code, or list all users (no code param)
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
+
+  // If no code, return all users (for dashboard)
   if (!code) {
-    return NextResponse.json({ error: 'Missing code' }, { status: 400 });
+    try {
+      const url = `${FIRESTORE_URL}/users?key=${API_KEY}&pageSize=500`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errText = await res.text();
+        return NextResponse.json({ error: errText }, { status: 500 });
+      }
+      const data = await res.json();
+      const users: Record<string, string> = {};
+      (data.documents || []).forEach((doc: Record<string, unknown>) => {
+        const docName = doc.name as string || '';
+        const docId = docName.split('/').pop() || '';
+        const fields = doc.fields as Record<string, Record<string, string>> | undefined;
+        const username = fields?.username?.stringValue || '';
+        if (docId && username) {
+          users[docId] = username;
+        }
+      });
+      return NextResponse.json({ users });
+    } catch (err) {
+      console.error('[API/users] GET all error:', err);
+      return NextResponse.json({ error: String(err) }, { status: 500 });
+    }
   }
 
+  // Single user lookup by code
   try {
     const url = `${FIRESTORE_URL}/users/${code}?key=${API_KEY}`;
     const res = await fetch(url);
