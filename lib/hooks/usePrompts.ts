@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  collection, query, orderBy, onSnapshot,
+  collection, query, orderBy, onSnapshot, getDocs,
   addDoc, updateDoc, doc, serverTimestamp, Timestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -15,24 +15,20 @@ export function usePrompts() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('[usePrompts] Starting Firestore listener...');
-    console.log('[usePrompts] DB object:', typeof db, db ? 'exists' : 'MISSING');
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
-    // Timeout: if no response after 10 seconds, show error
-    const timeout = setTimeout(() => {
-      setError('Zeitüberschreitung: Firestore antwortet nicht. Bitte Seite neu laden.');
-      setLoading(false);
-      console.error('[usePrompts] TIMEOUT after 10s - no response from Firestore');
-    }, 10000);
+    const promptsRef = collection(db, 'prompts');
+    const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
 
-    try {
-      const promptsRef = collection(db, 'prompts');
-      const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
-      console.log('[usePrompts] Query created, starting onSnapshot...');
+    // Strategy 1: Erst getDocs (einfacher HTTP GET - funktioniert immer)
+    async function loadInitial() {
+      try {
+        console.log('[usePrompts] Loading via getDocs...');
+        const snapshot = await getDocs(q);
+        if (cancelled) return;
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        clearTimeout(timeout);
-        console.log('[usePrompts] SUCCESS! Got', snapshot.size, 'documents');
+        console.log('[usePrompts] getDocs SUCCESS:', snapshot.size, 'documents');
         const promptsData = snapshot.docs.map(d => ({
           id: d.id,
           ...d.data()
@@ -41,24 +37,47 @@ export function usePrompts() {
         setPrompts(promptsData.filter(p => !p.deleted));
         setLoading(false);
         setError(null);
-      }, (err) => {
-        clearTimeout(timeout);
-        console.error('[usePrompts] Firebase ERROR:', err.code, err.message);
-        setError(`Firebase: ${err.code} - ${err.message}`);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const fireErr = err as { code?: string; message?: string };
+        console.error('[usePrompts] getDocs ERROR:', fireErr.code, fireErr.message);
+        setError(`Fehler: ${fireErr.code || 'unbekannt'} - ${fireErr.message || 'Verbindung fehlgeschlagen'}`);
         setLoading(false);
-      });
-
-      return () => {
-        clearTimeout(timeout);
-        unsubscribe();
-      };
-    } catch (err) {
-      clearTimeout(timeout);
-      const errorMsg = err instanceof Error ? err.message : 'Unbekannter Fehler';
-      console.error('[usePrompts] Setup ERROR:', errorMsg);
-      setError(errorMsg);
-      setLoading(false);
+      }
     }
+
+    // Strategy 2: Dann onSnapshot für Live-Updates (WebSocket)
+    function startLiveUpdates() {
+      try {
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          if (cancelled) return;
+          console.log('[usePrompts] onSnapshot update:', snapshot.size, 'documents');
+          const promptsData = snapshot.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+          })) as Prompt[];
+
+          setPrompts(promptsData.filter(p => !p.deleted));
+          setLoading(false);
+          setError(null);
+        }, (err) => {
+          // onSnapshot-Fehler ist nicht kritisch wenn getDocs funktioniert hat
+          console.warn('[usePrompts] onSnapshot error (non-critical):', err.code);
+        });
+      } catch {
+        console.warn('[usePrompts] onSnapshot setup failed (non-critical)');
+      }
+    }
+
+    // Beide starten
+    loadInitial().then(() => {
+      if (!cancelled) startLiveUpdates();
+    });
+
+    return () => {
+      cancelled = true;
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const addPrompt = useCallback(async (data: Omit<Prompt, 'id' | 'erstelltAm' | 'bewertungen' | 'nutzungsanzahl'>) => {
