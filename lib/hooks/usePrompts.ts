@@ -12,6 +12,7 @@ import { MAKE_WEBHOOK_URL } from '@/lib/constants';
 export function usePrompts() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -25,14 +26,18 @@ export function usePrompts() {
 
         setPrompts(promptsData.filter(p => !p.deleted));
         setLoading(false);
-      }, (error) => {
-        console.error('Firebase Fehler:', error);
+        setError(null);
+      }, (err) => {
+        console.error('Firebase Fehler:', err.code, err.message);
+        setError(`Firebase: ${err.code} - ${err.message}`);
         setLoading(false);
       });
 
       return () => unsubscribe();
-    } catch (error) {
-      console.error('Firebase Setup Fehler:', error);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unbekannter Fehler';
+      console.error('Firebase Setup Fehler:', errorMsg);
+      setError(errorMsg);
       setLoading(false);
     }
   }, []);
@@ -145,7 +150,7 @@ export function usePrompts() {
   }, [prompts]);
 
   return {
-    prompts, loading,
+    prompts, loading, error,
     addPrompt, updatePrompt, deletePrompt,
     ratePrompt, copyPrompt, addComment, requestDeletion
   };

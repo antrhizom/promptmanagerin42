@@ -15,7 +15,7 @@ import { FilterBar } from '@/components/filter/FilterBar';
 export default function Home() {
   const { isAuthenticated, isAdmin, userCode, username } = useAuthContext();
   const {
-    prompts, loading,
+    prompts, loading, error,
     addPrompt, updatePrompt, deletePrompt,
     ratePrompt, copyPrompt, addComment, requestDeletion
   } = usePrompts();
@@ -135,6 +135,7 @@ export default function Home() {
       <PromptList
         prompts={sortedPrompts}
         loading={loading}
+        error={error}
         onRate={ratePrompt}
         onCopy={copyPrompt}
         onEdit={isAdmin ? handleEdit : undefined}

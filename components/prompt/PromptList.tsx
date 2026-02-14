@@ -8,6 +8,7 @@ import styles from './PromptList.module.css';
 interface PromptListProps {
   prompts: Prompt[];
   loading: boolean;
+  error?: string | null;
   onRate: (promptId: string, emoji: string) => Promise<void>;
   onCopy: (promptId: string) => Promise<void>;
   onEdit?: (prompt: Prompt) => void;
@@ -18,10 +19,22 @@ interface PromptListProps {
 }
 
 export function PromptList({
-  prompts, loading, onRate, onCopy,
+  prompts, loading, error, onRate, onCopy,
   onEdit, onDelete, onComment, onReport, onTagClick
 }: PromptListProps) {
   const { userCode, username } = useAuthContext();
+
+  if (error) {
+    return (
+      <div className={styles.empty}>
+        <div className={styles.emptyTitle}>⚠️ Fehler beim Laden</div>
+        <div className={styles.emptyText}>{error}</div>
+        <div className={styles.emptyText} style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#999' }}>
+          Bitte Seite neu laden oder später erneut versuchen.
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <div className={styles.loading}>Prompts werden geladen...</div>;
