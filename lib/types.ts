@@ -1,4 +1,5 @@
-import { Timestamp } from 'firebase/firestore';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TimestampLike = any; // Supports Firestore Timestamp, ISO string, or {seconds, nanoseconds}
 
 export interface Prompt {
   id: string;
@@ -18,12 +19,13 @@ export interface Prompt {
   erstelltVon: string;
   erstelltVonRolle?: string;
   bildungsstufe?: string;
-  erstelltAm: Timestamp;
+  erstelltAm: TimestampLike;
   deleted?: boolean;
-  deletedAt?: Timestamp;
+  deletedAt?: TimestampLike;
   deletedBy?: string;
   deletionRequests?: DeletionRequest[];
   kommentare?: Kommentar[];
+  kommentar?: string;
   problemausgangslage?: string;
   loesungsbeschreibung?: string;
   schwierigkeiten?: string;
@@ -35,7 +37,7 @@ export interface Kommentar {
   userCode: string;
   userName: string;
   text: string;
-  timestamp: Timestamp;
+  timestamp: TimestampLike;
 }
 
 export interface DeletionRequest {

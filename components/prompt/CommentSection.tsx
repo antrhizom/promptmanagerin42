@@ -29,19 +29,31 @@ export function CommentSection({ kommentare, onAddComment }: CommentSectionProps
     }
   };
 
-  const formatDate = (timestamp: { seconds?: number }) => {
-    if (!timestamp?.seconds) return '';
-    return new Date(timestamp.seconds * 1000).toLocaleDateString('de-CH', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+  const formatDate = (timestamp: unknown) => {
+    if (!timestamp) return '';
+    // Handle Firestore timestamp object {seconds, nanoseconds}
+    if (typeof timestamp === 'object' && 'seconds' in (timestamp as Record<string, unknown>)) {
+      const ts = timestamp as { seconds: number };
+      return new Date(ts.seconds * 1000).toLocaleDateString('de-CH', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    }
+    // Handle ISO string from API
+    if (typeof timestamp === 'string') {
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('de-CH', {
+          day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+      }
+    }
+    return '';
   };
 
   return (
     <div className={styles.section}>
       <button className={styles.toggle} onClick={() => setExpanded(!expanded)}>
-        {expanded ? '&#9660;' : '&#9654;'} Kommentare ({kommentare.length})
+        {expanded ? '▼' : '▶'} Kommentare ({kommentare.length})
       </button>
 
       {expanded && (

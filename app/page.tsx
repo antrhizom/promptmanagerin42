@@ -101,6 +101,21 @@ export default function Home() {
     document.getElementById('prompts-liste')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleFilterClick = (filterType: string, value: string) => {
+    const filterMap: Record<string, string> = {
+      plattform: 'filterPlattform',
+      format: 'filterOutputFormat',
+      anwendungsfall: 'filterAnwendungsfall',
+      rolle: 'filterRolle',
+      bildungsstufe: 'suchbegriff',
+      suchbegriff: 'suchbegriff',
+      tag: 'filterTag',
+    };
+    const key = filterMap[filterType] || 'suchbegriff';
+    updateFilter(key as keyof typeof filters, value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <PageLayout
       onLoginClick={() => setShowLoginModal(true)}
@@ -143,6 +158,7 @@ export default function Home() {
         onComment={addComment}
         onReport={isAuthenticated ? handleReport : undefined}
         onTagClick={handleTagClick}
+        onFilterClick={handleFilterClick}
       />
     </PageLayout>
   );

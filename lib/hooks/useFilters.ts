@@ -81,7 +81,9 @@ export function useFilters(prompts: Prompt[]) {
         (prompt.tags || []).includes(filters.filterTag);
 
       const rolleMatch = !filters.filterRolle ||
-        prompt.erstelltVonRolle === filters.filterRolle;
+        prompt.erstelltVonRolle === filters.filterRolle ||
+        (typeof prompt.erstelltVonRolle === 'string' &&
+          prompt.erstelltVonRolle.split(',').map(r => r.trim()).includes(filters.filterRolle));
 
       return suchMatch && plattformMatch && outputMatch && anwendungMatch && tagMatch && rolleMatch;
     });
@@ -96,9 +98,18 @@ export function useFilters(prompts: Prompt[]) {
         const summeB = Object.values(b.bewertungen || {}).reduce((sum, val) => sum + val, 0);
         return summeB - summeA;
       } else {
-        const aTime = a.erstelltAm?.seconds || 0;
-        const bTime = b.erstelltAm?.seconds || 0;
-        return bTime - aTime;
+        // Support both Firestore timestamp {seconds} and ISO string
+        const getTime = (ts: unknown): number => {
+          if (!ts) return 0;
+          if (typeof ts === 'object' && 'seconds' in (ts as Record<string, unknown>)) {
+            return (ts as { seconds: number }).seconds;
+          }
+          if (typeof ts === 'string') {
+            return new Date(ts).getTime() / 1000;
+          }
+          return 0;
+        };
+        return getTime(b.erstelltAm) - getTime(a.erstelltAm);
       }
     });
   }, [filteredPrompts, filters.sortierung]);

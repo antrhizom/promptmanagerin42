@@ -16,11 +16,12 @@ interface PromptListProps {
   onComment: (promptId: string, kommentar: { userCode: string; userName: string; text: string }) => Promise<void>;
   onReport?: (promptId: string) => void;
   onTagClick?: (tag: string) => void;
+  onFilterClick?: (filterType: string, value: string) => void;
 }
 
 export function PromptList({
   prompts, loading, error, onRate, onCopy,
-  onEdit, onDelete, onComment, onReport, onTagClick
+  onEdit, onDelete, onComment, onReport, onTagClick, onFilterClick
 }: PromptListProps) {
   const { userCode, username } = useAuthContext();
 
@@ -62,6 +63,7 @@ export function PromptList({
           onComment={(text) => onComment(prompt.id, { userCode, userName: username, text })}
           onReport={onReport ? () => onReport(prompt.id) : undefined}
           onTagClick={onTagClick}
+          onFilterClick={onFilterClick}
         />
       ))}
     </div>

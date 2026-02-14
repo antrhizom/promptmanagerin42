@@ -1,146 +1,95 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  collection, query, orderBy, onSnapshot, getDocs,
-  addDoc, updateDoc, doc, serverTimestamp, Timestamp
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Prompt } from '@/lib/types';
 import { MAKE_WEBHOOK_URL } from '@/lib/constants';
+
+// Helper: Update via Server-API
+async function apiUpdate(promptId: string, data: Record<string, unknown>) {
+  const res = await fetch('/api/prompts/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ promptId, data })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Update failed: ${res.status}`);
+  }
+}
 
 export function usePrompts() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadedRef = useRef(false);
+
+  // Lade-Funktion via Server-API Route
+  const refreshPrompts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/prompts');
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setPrompts(data.prompts || []);
+      setError(null);
+      return true;
+    } catch (err) {
+      console.warn('[usePrompts] API failed:', err);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
 
-    // Strategy 1: Server-API Route (umgeht Netzwerk-Blockaden)
-    async function loadViaAPI() {
-      try {
-        console.log('[usePrompts] Loading via API route...');
-        const res = await fetch('/api/prompts');
-        if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
-        const data = await res.json();
-        if (cancelled) return;
-
-        console.log('[usePrompts] API SUCCESS:', data.prompts?.length, 'documents');
-        setPrompts(data.prompts || []);
-        setLoading(false);
-        setError(null);
-        return true;
-      } catch (err) {
-        console.warn('[usePrompts] API route failed:', err);
-        return false;
-      }
-    }
-
-    // Strategy 2: Direct Firestore getDocs (Fallback)
-    async function loadViaDirect() {
-      try {
-        console.log('[usePrompts] Loading via direct getDocs...');
-        const promptsRef = collection(db, 'prompts');
-        const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
-        const snapshot = await getDocs(q);
-        if (cancelled) return true;
-
-        console.log('[usePrompts] getDocs SUCCESS:', snapshot.size, 'documents');
-        const promptsData = snapshot.docs.map(d => ({
-          id: d.id,
-          ...d.data()
-        })) as Prompt[];
-
-        setPrompts(promptsData.filter(p => !p.deleted));
-        setLoading(false);
-        setError(null);
-        return true;
-      } catch (err: unknown) {
-        console.warn('[usePrompts] getDocs failed:', err);
-        return false;
-      }
-    }
-
-    // Strategy 3: onSnapshot für Live-Updates (optional)
-    function startLiveUpdates() {
-      try {
-        const promptsRef = collection(db, 'prompts');
-        const q = query(promptsRef, orderBy('erstelltAm', 'desc'));
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          if (cancelled) return;
-          const promptsData = snapshot.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-          })) as Prompt[];
-
-          setPrompts(promptsData.filter(p => !p.deleted));
-          setLoading(false);
-          setError(null);
-        }, () => {
-          // Non-critical: live updates not available
-        });
-      } catch {
-        // Non-critical
-      }
-    }
-
-    // Timeout nach 8 Sekunden
-    const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setError('Verbindung fehlgeschlagen. Bitte Seite neu laden.');
-        setLoading(false);
-      }
-    }, 8000);
-
-    // Lade-Reihenfolge: API → Direct → Fehler
     async function load() {
-      const apiOk = await loadViaAPI();
+      const ok = await refreshPrompts();
       if (cancelled) return;
-      clearTimeout(timeout);
 
-      if (!apiOk) {
-        const directOk = await loadViaDirect();
-        if (!directOk && !cancelled) {
-          setError('Firestore nicht erreichbar. Bitte prüfe deine Netzwerkverbindung.');
-          setLoading(false);
-        }
+      if (ok) {
+        loadedRef.current = true;
+        setLoading(false);
+      } else {
+        setError('Daten konnten nicht geladen werden. Bitte Seite neu laden.');
+        setLoading(false);
       }
-
-      // Live-Updates versuchen (optional)
-      if (!cancelled) startLiveUpdates();
     }
 
     load();
 
+    // Auto-Refresh alle 30 Sekunden für Updates
+    const interval = setInterval(() => {
+      if (loadedRef.current) refreshPrompts();
+    }, 30000);
+
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
-      if (unsubscribe) unsubscribe();
+      clearInterval(interval);
     };
-  }, []);
+  }, [refreshPrompts]);
 
   const addPrompt = useCallback(async (data: Omit<Prompt, 'id' | 'erstelltAm' | 'bewertungen' | 'nutzungsanzahl'>) => {
-    await addDoc(collection(db, 'prompts'), {
-      ...data,
-      bewertungen: { '👍': 0, '❤️': 0, '🔥': 0, '⭐': 0, '💡': 0 },
-      nutzungsanzahl: 0,
-      erstelltAm: serverTimestamp(),
+    const res = await fetch('/api/prompts/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-  }, []);
+    if (!res.ok) throw new Error('Prompt erstellen fehlgeschlagen');
+    await refreshPrompts();
+  }, [refreshPrompts]);
 
   const updatePrompt = useCallback(async (id: string, data: Partial<Prompt>) => {
-    await updateDoc(doc(db, 'prompts', id), data);
-  }, []);
+    await apiUpdate(id, data as Record<string, unknown>);
+    await refreshPrompts();
+  }, [refreshPrompts]);
 
   const deletePrompt = useCallback(async (id: string, userCode: string) => {
-    await updateDoc(doc(db, 'prompts', id), {
+    await apiUpdate(id, {
       deleted: true,
-      deletedAt: serverTimestamp(),
+      deletedAt: new Date().toISOString(),
       deletedBy: userCode
     });
-  }, []);
+    await refreshPrompts();
+  }, [refreshPrompts]);
 
   const ratePrompt = useCallback(async (promptId: string, emoji: string) => {
     const prompt = prompts.find(p => p.id === promptId);
@@ -151,18 +100,26 @@ export function usePrompts() {
       [emoji]: ((prompt.bewertungen || {})[emoji] || 0) + 1
     };
 
-    await updateDoc(doc(db, 'prompts', promptId), {
-      bewertungen: neueBewertungen
-    });
+    // Optimistic update
+    setPrompts(prev => prev.map(p =>
+      p.id === promptId ? { ...p, bewertungen: neueBewertungen } : p
+    ));
+
+    await apiUpdate(promptId, { bewertungen: neueBewertungen });
   }, [prompts]);
 
   const copyPrompt = useCallback(async (promptId: string) => {
     const prompt = prompts.find(p => p.id === promptId);
     if (!prompt) return;
 
-    await updateDoc(doc(db, 'prompts', promptId), {
-      nutzungsanzahl: (prompt.nutzungsanzahl || 0) + 1
-    });
+    const neueAnzahl = (prompt.nutzungsanzahl || 0) + 1;
+
+    // Optimistic update
+    setPrompts(prev => prev.map(p =>
+      p.id === promptId ? { ...p, nutzungsanzahl: neueAnzahl } : p
+    ));
+
+    await apiUpdate(promptId, { nutzungsanzahl: neueAnzahl });
   }, [prompts]);
 
   const addComment = useCallback(async (
@@ -177,14 +134,17 @@ export function usePrompts() {
       userCode: kommentar.userCode,
       userName: kommentar.userName,
       text: kommentar.text.trim(),
-      timestamp: Timestamp.now()
+      timestamp: new Date().toISOString()
     };
 
     const aktualisierteKommentare = [...(prompt.kommentare || []), neuerKommentar];
 
-    await updateDoc(doc(db, 'prompts', promptId), {
-      kommentare: aktualisierteKommentare
-    });
+    // Optimistic update
+    setPrompts(prev => prev.map(p =>
+      p.id === promptId ? { ...p, kommentare: aktualisierteKommentare } : p
+    ));
+
+    await apiUpdate(promptId, { kommentare: aktualisierteKommentare });
   }, [prompts]);
 
   const requestDeletion = useCallback(async (
@@ -195,7 +155,6 @@ export function usePrompts() {
     if (!prompt) return;
 
     const deletionRequests = prompt.deletionRequests || [];
-
     const updatedRequests = [
       ...deletionRequests,
       {
@@ -206,9 +165,8 @@ export function usePrompts() {
       }
     ];
 
-    await updateDoc(doc(db, 'prompts', promptId), {
-      deletionRequests: updatedRequests
-    });
+    await apiUpdate(promptId, { deletionRequests: updatedRequests });
+    await refreshPrompts();
 
     // Notify via Make.com webhook
     try {
@@ -226,10 +184,10 @@ export function usePrompts() {
     } catch {
       // Webhook failure is not critical
     }
-  }, [prompts]);
+  }, [prompts, refreshPrompts]);
 
   return {
-    prompts, loading, error,
+    prompts, loading, error, refreshPrompts,
     addPrompt, updatePrompt, deletePrompt,
     ratePrompt, copyPrompt, addComment, requestDeletion
   };

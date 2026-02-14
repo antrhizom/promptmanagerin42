@@ -16,21 +16,34 @@ interface PromptCardProps {
   onComment: (text: string) => Promise<void>;
   onReport?: () => void;
   onTagClick?: (tag: string) => void;
+  onFilterClick?: (filterType: string, value: string) => void;
 }
 
 export function PromptCard({
   prompt, onRate, onCopy, onEdit, onDelete,
-  onComment, onReport, onTagClick
+  onComment, onReport, onTagClick, onFilterClick
 }: PromptCardProps) {
   const { isAdmin, isAuthenticated, userCode } = useAuthContext();
   const canEdit = isAdmin || (isAuthenticated && (prompt.erstelltVon === userCode || prompt.erstelltVon === `user_${userCode}`));
   const canDelete = isAdmin || (isAuthenticated && (prompt.erstelltVon === userCode || prompt.erstelltVon === `user_${userCode}`));
 
-  const formatDate = (timestamp: { seconds?: number }) => {
-    if (!timestamp?.seconds) return '';
-    return new Date(timestamp.seconds * 1000).toLocaleDateString('de-CH', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
+  const formatDate = (timestamp: unknown) => {
+    if (!timestamp) return '';
+    if (typeof timestamp === 'object' && 'seconds' in (timestamp as Record<string, unknown>)) {
+      const ts = timestamp as { seconds: number };
+      return new Date(ts.seconds * 1000).toLocaleDateString('de-CH', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+    }
+    if (typeof timestamp === 'string') {
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('de-CH', {
+          day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+      }
+    }
+    return '';
   };
 
   const handleCopyToClipboard = () => {
@@ -78,10 +91,18 @@ export function PromptCard({
       {/* Meta */}
       <div className={styles.meta}>
         {prompt.erstelltVonRolle && (
-          <Badge variant="role">{prompt.erstelltVonRolle}</Badge>
+          typeof prompt.erstelltVonRolle === 'string' && prompt.erstelltVonRolle.includes(',')
+            ? prompt.erstelltVonRolle.split(',').map(r => r.trim()).filter(Boolean).map(r => (
+              <Badge key={r} variant="role" onClick={() => onFilterClick?.('rolle', r)}>{r}</Badge>
+            ))
+            : <Badge variant="role" onClick={() => onFilterClick?.('rolle', prompt.erstelltVonRolle as string)}>{prompt.erstelltVonRolle}</Badge>
         )}
         {prompt.bildungsstufe && (
-          <Badge variant="level">{prompt.bildungsstufe}</Badge>
+          typeof prompt.bildungsstufe === 'string' && prompt.bildungsstufe.includes(',')
+            ? prompt.bildungsstufe.split(',').map(b => b.trim()).filter(Boolean).map(b => (
+              <Badge key={b} variant="level" onClick={() => onFilterClick?.('bildungsstufe', b)}>{b}</Badge>
+            ))
+            : <Badge variant="level" onClick={() => onFilterClick?.('bildungsstufe', prompt.bildungsstufe as string)}>{prompt.bildungsstufe}</Badge>
         )}
         <span className={styles.metaText}>{formatDate(prompt.erstelltAm)}</span>
       </div>
@@ -91,9 +112,9 @@ export function PromptCard({
         <div className={styles.badgeSection}>
           {Object.entries(prompt.plattformenUndModelle).map(([plattform, modelle]) => (
             <div key={plattform} className={styles.badgeGroup}>
-              <Badge variant="platform">{plattform}</Badge>
+              <Badge variant="platform" onClick={() => onFilterClick?.('plattform', plattform)}>{plattform}</Badge>
               {(modelle || []).map(m => (
-                <Badge key={m} variant="model">{m}</Badge>
+                <Badge key={m} variant="model" onClick={() => onFilterClick?.('suchbegriff', m)}>{m}</Badge>
               ))}
             </div>
           ))}
@@ -126,10 +147,10 @@ export function PromptCard({
       {/* Output formats, use cases, tags */}
       <div className={styles.badgeSection}>
         {(prompt.outputFormate || []).map(f => (
-          <Badge key={f} variant="format">{f}</Badge>
+          <Badge key={f} variant="format" onClick={() => onFilterClick?.('format', f)}>{f}</Badge>
         ))}
         {(prompt.anwendungsfaelle || []).map(a => (
-          <Badge key={a} variant="usecase">{a}</Badge>
+          <Badge key={a} variant="usecase" onClick={() => onFilterClick?.('anwendungsfall', a)}>{a}</Badge>
         ))}
         {(prompt.tags || []).map(t => (
           <Badge key={t} variant="tag" onClick={() => onTagClick?.(t)}>#{t}</Badge>
@@ -141,12 +162,12 @@ export function PromptCard({
         <div className={styles.linksSection}>
           {prompt.link1 && (
             <a href={prompt.link1} target="_blank" rel="noopener noreferrer" className={styles.linkItem}>
-              &#8599; Link 1
+              ↗ Link 1
             </a>
           )}
           {prompt.link2 && (
             <a href={prompt.link2} target="_blank" rel="noopener noreferrer" className={styles.linkItem}>
-              &#8599; Link 2
+              ↗ Link 2
             </a>
           )}
         </div>
@@ -178,7 +199,7 @@ export function PromptCard({
             <div className={styles.processItem}>
               <div className={styles.processLabel}>Endprodukt</div>
               <a href={prompt.endproduktLink} target="_blank" rel="noopener noreferrer" className={styles.processLink}>
-                &#8599; {prompt.endproduktLink}
+                ↗ {prompt.endproduktLink}
               </a>
             </div>
           )}
@@ -197,7 +218,7 @@ export function PromptCard({
             </button>
           ))}
           <span className={styles.usageCount}>
-            &#128203; {prompt.nutzungsanzahl || 0}x kopiert
+            📋 {prompt.nutzungsanzahl || 0}x kopiert
           </span>
         </div>
 
