@@ -6,26 +6,16 @@ export const ADMIN_EMAIL = 'antrhizom@gmail.com';
 
 // Rollen
 export const ROLLEN = [
-  'Lehrperson',
-  'Lernende',
-  'Schüler*in',
-  'Student*in',
-  'Berufsbildner*in',
-  'Schulverwaltung',
-  'Angestellte Mediothek',
-  'Sonstige'
+  'Lehrpersonen',
+  'IKT-Verantwortliche',
+  'Lernende/Schüler*innen'
 ];
 
 // Bildungsstufen
 export const BILDUNGSSTUFEN = [
-  'Primar',
-  'Sekundar I',
   'Berufsfachschule',
   'Gymnasium',
-  'Fachhochschule',
-  'Höhere Fachschule',
-  'Universität',
-  'ETH'
+  'Höhere Fachschule'
 ];
 
 // Plattformen mit Modellen und Funktionen
