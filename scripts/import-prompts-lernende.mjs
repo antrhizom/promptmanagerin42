@@ -1,6 +1,21 @@
 // Import-Script für Lernende-Prompts aus Promptbibliothek → Firestore
-const PROJECT_ID = 'prompt-managerin';
-const API_KEY = 'AIzaSyDOhgTRdSw-4nrvfN4t84bbXh4DJjVEgpo';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// API Key aus .env.local lesen (nicht hardcoden!)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envFile = readFileSync(resolve(__dirname, '..', '.env.local'), 'utf-8');
+const env = Object.fromEntries(
+  envFile.split('\n').filter(l => l && !l.startsWith('#') && l.includes('=')).map(l => {
+    const idx = l.indexOf('=');
+    return [l.slice(0, idx).trim(), l.slice(idx + 1).trim()];
+  })
+);
+
+const PROJECT_ID = env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'prompt-managerin';
+const API_KEY = env.NEXT_PUBLIC_FIREBASE_API_KEY;
+if (!API_KEY) { console.error('NEXT_PUBLIC_FIREBASE_API_KEY nicht in .env.local gefunden!'); process.exit(1); }
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 function toFirestoreValue(val) {
