@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthContext'
+import { VisitTracker } from '@/components/analytics/VisitTracker'
 
 export const metadata: Metadata = {
   title: 'Prompt Managerin',
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="de">
       <body>
         <AuthProvider>
+          <VisitTracker />
           {children}
         </AuthProvider>
       </body>

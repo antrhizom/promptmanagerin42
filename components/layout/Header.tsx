@@ -21,7 +21,10 @@ export function Header({ onLoginClick, onCreateClick }: HeaderProps) {
 
         <nav className={styles.nav}>
           <Link href="/" className={styles.navLink}>Prompts</Link>
-          <Link href="/admin" className={styles.navLink}>Dashboard</Link>
+
+          {isAdmin && (
+            <Link href="/admin" className={styles.navLink}>Dashboard</Link>
+          )}
 
           {isAdmin && onCreateClick && (
             <button className={styles.btnPrimary} onClick={onCreateClick}>
@@ -29,10 +32,8 @@ export function Header({ onLoginClick, onCreateClick }: HeaderProps) {
             </button>
           )}
 
-          {isAuthenticated && (
-            <span className={styles.userPill}>
-              {username}
-            </span>
+          {isAuthenticated && !isAdmin && (
+            <span className={styles.userPill}>{username}</span>
           )}
 
           {isAdmin && (

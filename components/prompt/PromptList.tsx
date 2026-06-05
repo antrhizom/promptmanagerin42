@@ -9,19 +9,19 @@ interface PromptListProps {
   prompts: Prompt[];
   loading: boolean;
   error?: string | null;
-  onRate: (promptId: string, emoji: string) => Promise<void>;
   onCopy: (promptId: string) => Promise<void>;
+  onRate: (promptId: string, emoji: string) => Promise<void>;
+  onComment: (promptId: string, kommentar: { userCode: string; userName: string; text: string }) => Promise<void>;
+  onLoginRequired?: () => void;
   onEdit?: (prompt: Prompt) => void;
   onDelete?: (promptId: string) => void;
-  onComment: (promptId: string, kommentar: { userCode: string; userName: string; text: string }) => Promise<void>;
-  onReport?: (promptId: string) => void;
   onTagClick?: (tag: string) => void;
   onFilterClick?: (filterType: string, value: string) => void;
 }
 
 export function PromptList({
-  prompts, loading, error, onRate, onCopy,
-  onEdit, onDelete, onComment, onReport, onTagClick, onFilterClick
+  prompts, loading, error, onCopy, onRate, onComment, onLoginRequired,
+  onEdit, onDelete, onTagClick, onFilterClick
 }: PromptListProps) {
   const { userCode, username } = useAuthContext();
 
@@ -56,12 +56,12 @@ export function PromptList({
         <PromptCard
           key={prompt.id}
           prompt={prompt}
-          onRate={(emoji) => onRate(prompt.id, emoji)}
           onCopy={() => onCopy(prompt.id)}
+          onRate={(emoji) => onRate(prompt.id, emoji)}
+          onComment={(text) => onComment(prompt.id, { userCode, userName: username, text })}
+          onLoginRequired={onLoginRequired}
           onEdit={onEdit ? () => onEdit(prompt) : undefined}
           onDelete={onDelete ? () => onDelete(prompt.id) : undefined}
-          onComment={(text) => onComment(prompt.id, { userCode, userName: username, text })}
-          onReport={onReport ? () => onReport(prompt.id) : undefined}
           onTagClick={onTagClick}
           onFilterClick={onFilterClick}
         />

@@ -2,28 +2,31 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Prompt } from '@/lib/types';
-import { MAKE_WEBHOOK_URL } from '@/lib/constants';
-
-// Helper: Update via Server-API
-async function apiUpdate(promptId: string, data: Record<string, unknown>) {
-  const res = await fetch('/api/prompts/update', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ promptId, data })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Update failed: ${res.status}`);
-  }
-}
+import { useAuthContext } from '@/components/auth/AuthContext';
+import { trackAction } from '@/lib/analytics';
 
 export function usePrompts() {
+  const { getIdToken } = useAuthContext();
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const loadedRef = useRef(false);
 
-  // Lade-Funktion via Server-API Route
+  // Admin-Write via Server-API (mit Firebase-ID-Token als Bearer).
+  const apiAdminUpdate = useCallback(async (promptId: string, data: Record<string, unknown>) => {
+    const token = await getIdToken();
+    if (!token) throw new Error('Nicht als Admin angemeldet.');
+    const res = await fetch('/api/prompts/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ promptId, data }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Update fehlgeschlagen: ${res.status}`);
+    }
+  }, [getIdToken]);
+
   const refreshPrompts = useCallback(async () => {
     try {
       const res = await fetch('/api/prompts');
@@ -44,7 +47,6 @@ export function usePrompts() {
     async function load() {
       const ok = await refreshPrompts();
       if (cancelled) return;
-
       if (ok) {
         loadedRef.current = true;
         setLoading(false);
@@ -56,7 +58,6 @@ export function usePrompts() {
 
     load();
 
-    // Auto-Refresh alle 30 Sekunden für Updates
     const interval = setInterval(() => {
       if (loadedRef.current) refreshPrompts();
     }, 30000);
@@ -67,128 +68,106 @@ export function usePrompts() {
     };
   }, [refreshPrompts]);
 
+  // --- Admin-Operationen (Token erforderlich) ---
   const addPrompt = useCallback(async (data: Omit<Prompt, 'id' | 'erstelltAm' | 'bewertungen' | 'nutzungsanzahl'>) => {
+    const token = await getIdToken();
+    if (!token) throw new Error('Nicht als Admin angemeldet.');
     const res = await fetch('/api/prompts/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Prompt erstellen fehlgeschlagen');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Prompt erstellen fehlgeschlagen');
+    }
     await refreshPrompts();
-  }, [refreshPrompts]);
+  }, [getIdToken, refreshPrompts]);
 
   const updatePrompt = useCallback(async (id: string, data: Partial<Prompt>) => {
-    await apiUpdate(id, data as Record<string, unknown>);
+    await apiAdminUpdate(id, data as Record<string, unknown>);
     await refreshPrompts();
-  }, [refreshPrompts]);
+  }, [apiAdminUpdate, refreshPrompts]);
 
-  const deletePrompt = useCallback(async (id: string, userCode: string) => {
-    await apiUpdate(id, {
+  const deletePrompt = useCallback(async (id: string) => {
+    await apiAdminUpdate(id, {
       deleted: true,
       deletedAt: new Date().toISOString(),
-      deletedBy: userCode
     });
     await refreshPrompts();
-  }, [refreshPrompts]);
+  }, [apiAdminUpdate, refreshPrompts]);
 
+  // --- Öffentliche Operation: Kopieren erhöht den Zähler (anonym, +1) ---
+  const copyPrompt = useCallback(async (promptId: string) => {
+    const prompt = prompts.find(p => p.id === promptId);
+    if (!prompt) return;
+
+    // Optimistisches UI-Update
+    setPrompts(prev => prev.map(p =>
+      p.id === promptId ? { ...p, nutzungsanzahl: (p.nutzungsanzahl || 0) + 1 } : p
+    ));
+
+    trackAction('copy');
+    try {
+      await fetch('/api/prompts/use', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promptId }),
+      });
+    } catch {
+      // Zähler-Fehler ist unkritisch.
+    }
+  }, [prompts]);
+
+  // --- Öffentliche Operation: Liken (Emoji-Bewertung +1, anonym) ---
   const ratePrompt = useCallback(async (promptId: string, emoji: string) => {
     const prompt = prompts.find(p => p.id === promptId);
     if (!prompt) return;
 
     const neueBewertungen = {
       ...(prompt.bewertungen || {}),
-      [emoji]: ((prompt.bewertungen || {})[emoji] || 0) + 1
+      [emoji]: ((prompt.bewertungen || {})[emoji] || 0) + 1,
     };
-
-    // Optimistic update
+    // Optimistisches UI-Update
     setPrompts(prev => prev.map(p =>
       p.id === promptId ? { ...p, bewertungen: neueBewertungen } : p
     ));
-
-    await apiUpdate(promptId, { bewertungen: neueBewertungen });
+    trackAction('like');
+    try {
+      await fetch('/api/prompts/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promptId, emoji }),
+      });
+    } catch {
+      // Like-Fehler ist unkritisch.
+    }
   }, [prompts]);
 
-  const copyPrompt = useCallback(async (promptId: string) => {
-    const prompt = prompts.find(p => p.id === promptId);
-    if (!prompt) return;
-
-    const neueAnzahl = (prompt.nutzungsanzahl || 0) + 1;
-
-    // Optimistic update
-    setPrompts(prev => prev.map(p =>
-      p.id === promptId ? { ...p, nutzungsanzahl: neueAnzahl } : p
-    ));
-
-    await apiUpdate(promptId, { nutzungsanzahl: neueAnzahl });
-  }, [prompts]);
-
+  // --- Kommentieren (nur mit Namens-Login; Identität wird mitgesendet) ---
   const addComment = useCallback(async (
     promptId: string,
     kommentar: { userCode: string; userName: string; text: string }
   ) => {
-    const prompt = prompts.find(p => p.id === promptId);
-    if (!prompt) return;
-
-    const neuerKommentar = {
-      id: Date.now().toString(),
-      userCode: kommentar.userCode,
-      userName: kommentar.userName,
-      text: kommentar.text.trim(),
-      timestamp: new Date().toISOString()
-    };
-
-    const aktualisierteKommentare = [...(prompt.kommentare || []), neuerKommentar];
-
-    // Optimistic update
-    setPrompts(prev => prev.map(p =>
-      p.id === promptId ? { ...p, kommentare: aktualisierteKommentare } : p
-    ));
-
-    await apiUpdate(promptId, { kommentare: aktualisierteKommentare });
-  }, [prompts]);
-
-  const requestDeletion = useCallback(async (
-    promptId: string,
-    request: { userCode: string; userName: string; grund: string }
-  ) => {
-    const prompt = prompts.find(p => p.id === promptId);
-    if (!prompt) return;
-
-    const deletionRequests = prompt.deletionRequests || [];
-    const updatedRequests = [
-      ...deletionRequests,
-      {
-        userCode: request.userCode,
-        userName: request.userName,
-        grund: request.grund.trim(),
-        timestamp: new Date().toISOString()
-      }
-    ];
-
-    await apiUpdate(promptId, { deletionRequests: updatedRequests });
-    await refreshPrompts();
-
-    // Notify via Make.com webhook
-    try {
-      await fetch(MAKE_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'deletion_request',
-          promptId,
-          promptTitle: prompt.titel,
-          requester: request.userName,
-          reason: request.grund
-        })
-      });
-    } catch {
-      // Webhook failure is not critical
+    if (!kommentar.userCode || !kommentar.userName) {
+      throw new Error('Login erforderlich, um zu kommentieren.');
     }
-  }, [prompts, refreshPrompts]);
+    const res = await fetch('/api/prompts/comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promptId, ...kommentar }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Kommentar fehlgeschlagen');
+    }
+    trackAction('comment');
+    await refreshPrompts();
+  }, [refreshPrompts]);
 
   return {
     prompts, loading, error, refreshPrompts,
     addPrompt, updatePrompt, deletePrompt,
-    ratePrompt, copyPrompt, addComment, requestDeletion
+    copyPrompt, ratePrompt, addComment,
   };
 }

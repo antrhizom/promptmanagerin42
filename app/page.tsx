@@ -11,13 +11,14 @@ import { UserLoginModal } from '@/components/auth/UserLoginModal';
 import { PromptForm } from '@/components/prompt/PromptForm';
 import { PromptList } from '@/components/prompt/PromptList';
 import { FilterBar } from '@/components/filter/FilterBar';
+import { trackAction } from '@/lib/analytics';
 
 export default function Home() {
-  const { isAuthenticated, isAdmin, userCode, username } = useAuthContext();
+  const { isAuthenticated, isAdmin } = useAuthContext();
   const {
     prompts, loading, error,
     addPrompt, updatePrompt, deletePrompt,
-    ratePrompt, copyPrompt, addComment, requestDeletion
+    copyPrompt, ratePrompt, addComment,
   } = usePrompts();
   const {
     filters, sortedPrompts, allTags,
@@ -55,48 +56,15 @@ export default function Home() {
   };
 
   const handleDelete = async (promptId: string) => {
-    const prompt = prompts.find(p => p.id === promptId);
-    if (!prompt) return;
-
-    const isOwn = isAdmin || prompt.erstelltVon === userCode || prompt.erstelltVon === `user_${userCode}`;
-
-    if (isOwn) {
-      if (confirm('Mochtest du diesen Prompt wirklich loschen?')) {
-        await deletePrompt(promptId, userCode);
-        alert('Prompt geloscht!');
-      }
-    } else {
-      const deletionRequests = prompt.deletionRequests || [];
-      if (deletionRequests.some(req => req.userCode === userCode)) {
-        alert('Du hast bereits eine Loschanfrage fur diesen Prompt gestellt.');
-        return;
-      }
-
-      const grund = window.prompt(
-        'Warum mochtest du diesen Prompt melden?\n\n' +
-        'Grunde konnen sein:\n' +
-        '- Unangemessener Inhalt\n' +
-        '- Fehlerhafte Information\n' +
-        '- Spam\n' +
-        '- Sonstiges'
-      );
-
-      if (!grund || !grund.trim()) return;
-
-      await requestDeletion(promptId, {
-        userCode,
-        userName: username || 'Anonym',
-        grund: grund.trim()
-      });
-      alert('Loschanfrage wurde gestellt! Der Admin wurde benachrichtigt.');
+    if (!isAdmin) return;
+    if (confirm('Mochtest du diesen Prompt wirklich loschen?')) {
+      await deletePrompt(promptId);
+      alert('Prompt geloscht!');
     }
   };
 
-  const handleReport = (promptId: string) => {
-    handleDelete(promptId);
-  };
-
   const handleTagClick = (tag: string) => {
+    trackAction('tag');
     updateFilter('suchbegriff', `#${tag}`);
     document.getElementById('prompts-liste')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -111,6 +79,7 @@ export default function Home() {
       suchbegriff: 'suchbegriff',
       tag: 'filterTag',
     };
+    trackAction(`filter:${filterType}`);
     const key = filterMap[filterType] || 'suchbegriff';
     updateFilter(key as keyof typeof filters, value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -151,12 +120,12 @@ export default function Home() {
         prompts={sortedPrompts}
         loading={loading}
         error={error}
-        onRate={ratePrompt}
         onCopy={copyPrompt}
-        onEdit={isAdmin ? handleEdit : undefined}
-        onDelete={isAdmin || isAuthenticated ? handleDelete : undefined}
+        onRate={ratePrompt}
         onComment={addComment}
-        onReport={isAuthenticated ? handleReport : undefined}
+        onLoginRequired={() => setShowLoginModal(true)}
+        onEdit={isAdmin ? handleEdit : undefined}
+        onDelete={isAdmin ? handleDelete : undefined}
         onTagClick={handleTagClick}
         onFilterClick={handleFilterClick}
       />

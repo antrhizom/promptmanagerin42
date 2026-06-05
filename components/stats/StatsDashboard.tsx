@@ -4,11 +4,22 @@ import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
+import { useAuthContext } from '@/components/auth/AuthContext';
 import styles from './StatsDashboard.module.css';
 
 interface StatsDashboardProps {
   prompts: Prompt[];
   loading: boolean;
+}
+
+interface AnalyticsSummary {
+  visitors: number;
+  visitEvents: number;
+  totalFunctionClicks: number;
+  totalActions: number;
+  functions: { name: string; plattform: string; count: number }[];
+  functionsByPlattform: { plattform: string; count: number }[];
+  actions: { name: string; count: number }[];
 }
 
 function getRankClass(index: number) {
@@ -19,25 +30,28 @@ function getRankClass(index: number) {
 }
 
 export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
-  // Lade Nutzernamen über API statt Firebase Client SDK
-  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const { getIdToken } = useAuthContext();
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
 
+  // Besucher- & Funktions-Auswertung (Admin-only, mit ID-Token).
   useEffect(() => {
-    async function loadUserNames() {
+    async function loadAnalytics() {
       try {
-        const res = await fetch('/api/users');
-        const data = await res.json();
-        if (data.users) {
-          setUserNames(data.users);
-        }
+        const token = await getIdToken();
+        if (!token) return;
+        const res = await fetch('/api/analytics', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        setAnalytics(await res.json());
       } catch (error) {
-        console.error('Fehler beim Laden der Nutzernamen:', error);
+        console.error('Fehler beim Laden der Analytics:', error);
       }
     }
-    loadUserNames();
-  }, []);
+    loadAnalytics();
+  }, [getIdToken]);
 
-  const stats = useMemo(() => calculateStats(prompts, userNames), [prompts, userNames]);
+  const stats = useMemo(() => calculateStats(prompts, {}), [prompts]);
 
   if (loading) {
     return <div className={styles.loading}>Dashboard wird geladen...</div>;
@@ -49,6 +63,69 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
       <h1 className={styles.title}>Dashboard</h1>
       <p className={styles.subtitle}>Übersicht über alle Aktivitäten der Prompt Managerin</p>
+
+      {/* Besucher & Funktionen (anonymes Tracking) */}
+      <div className={styles.sectionPlatform}>
+        <h2 className={styles.sectionTitle}>Besucher &amp; Funktionen (ohne Login)</h2>
+        <div className={styles.overviewGrid}>
+          <div className={styles.overviewCardBlue}>
+            <div className={styles.overviewValue}>{analytics?.visitors ?? '–'}</div>
+            <div className={styles.overviewLabel}>Besucher (Sessions)</div>
+          </div>
+          <div className={styles.overviewCardGreen}>
+            <div className={styles.overviewValue}>{analytics?.visitEvents ?? '–'}</div>
+            <div className={styles.overviewLabel}>Seitenaufrufe</div>
+          </div>
+          <div className={styles.overviewCardAmber}>
+            <div className={styles.overviewValue}>{analytics?.totalFunctionClicks ?? '–'}</div>
+            <div className={styles.overviewLabel}>KI-Funktionen angewählt</div>
+          </div>
+          <div className={styles.overviewCardPurple}>
+            <div className={styles.overviewValue}>{analytics?.totalActions ?? '–'}</div>
+            <div className={styles.overviewLabel}>Seiten-Aktionen</div>
+          </div>
+        </div>
+
+        {analytics && analytics.functions.length > 0 && (
+          <>
+            <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
+              Angewählte KI-Plattform-Funktionen
+            </h3>
+            <div className={styles.statGrid}>
+              {analytics.functions.map(f => (
+                <div key={`${f.plattform}-${f.name}`} className={styles.statItem}>
+                  <span className={styles.statItemName}>
+                    {f.name}{f.plattform ? ` · ${f.plattform}` : ''}
+                  </span>
+                  <span className={styles.statItemCount}>{f.count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {analytics && analytics.actions.length > 0 && (
+          <>
+            <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
+              Seiten-Aktionen
+            </h3>
+            <div className={styles.statGrid}>
+              {analytics.actions.map(a => (
+                <div key={a.name} className={styles.statItem}>
+                  <span className={styles.statItemName}>{a.name}</span>
+                  <span className={styles.statItemCount}>{a.count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {!analytics && (
+          <p className={styles.subtitle} style={{ marginTop: '0.5rem' }}>
+            Besucher- und Funktionsdaten werden geladen … (erscheinen, sobald die Seite genutzt wird)
+          </p>
+        )}
+      </div>
 
       {/* Overview - 5 Karten inkl. Kommentare */}
       <div className={styles.overviewGrid}>

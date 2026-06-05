@@ -8,9 +8,10 @@ import styles from './CommentSection.module.css';
 interface CommentSectionProps {
   kommentare: Kommentar[];
   onAddComment: (text: string) => Promise<void>;
+  onLoginRequired?: () => void;
 }
 
-export function CommentSection({ kommentare, onAddComment }: CommentSectionProps) {
+export function CommentSection({ kommentare, onAddComment, onLoginRequired }: CommentSectionProps) {
   const { isAuthenticated } = useAuthContext();
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
@@ -31,14 +32,12 @@ export function CommentSection({ kommentare, onAddComment }: CommentSectionProps
 
   const formatDate = (timestamp: unknown) => {
     if (!timestamp) return '';
-    // Handle Firestore timestamp object {seconds, nanoseconds}
     if (typeof timestamp === 'object' && 'seconds' in (timestamp as Record<string, unknown>)) {
       const ts = timestamp as { seconds: number };
       return new Date(ts.seconds * 1000).toLocaleDateString('de-CH', {
         day: '2-digit', month: '2-digit', year: 'numeric'
       });
     }
-    // Handle ISO string from API
     if (typeof timestamp === 'string') {
       const date = new Date(timestamp);
       if (!isNaN(date.getTime())) {
@@ -90,7 +89,13 @@ export function CommentSection({ kommentare, onAddComment }: CommentSectionProps
             </div>
           ) : (
             <p className={styles.loginHint}>
-              Melde dich an, um Kommentare zu schreiben.
+              {onLoginRequired ? (
+                <button className={styles.toggle} onClick={onLoginRequired}>
+                  Melde dich an, um zu kommentieren →
+                </button>
+              ) : (
+                'Melde dich an, um Kommentare zu schreiben.'
+              )}
             </p>
           )}
         </>

@@ -5,27 +5,28 @@ import { EMOJIS } from '@/lib/constants';
 import { Badge } from '@/components/common/Badge';
 import { CommentSection } from './CommentSection';
 import { useAuthContext } from '@/components/auth/AuthContext';
+import { trackAction, trackFunction } from '@/lib/analytics';
 import styles from './PromptCard.module.css';
 
 interface PromptCardProps {
   prompt: Prompt;
-  onRate: (emoji: string) => void;
   onCopy: () => void;
+  onRate: (emoji: string) => void;
+  onComment: (text: string) => Promise<void>;
+  onLoginRequired?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  onComment: (text: string) => Promise<void>;
-  onReport?: () => void;
   onTagClick?: (tag: string) => void;
   onFilterClick?: (filterType: string, value: string) => void;
 }
 
 export function PromptCard({
-  prompt, onRate, onCopy, onEdit, onDelete,
-  onComment, onReport, onTagClick, onFilterClick
+  prompt, onCopy, onRate, onComment, onLoginRequired,
+  onEdit, onDelete, onTagClick, onFilterClick
 }: PromptCardProps) {
-  const { isAdmin, isAuthenticated, userCode } = useAuthContext();
-  const canEdit = isAdmin || (isAuthenticated && (prompt.erstelltVon === userCode || prompt.erstelltVon === `user_${userCode}`));
-  const canDelete = isAdmin || (isAuthenticated && (prompt.erstelltVon === userCode || prompt.erstelltVon === `user_${userCode}`));
+  const { isAdmin } = useAuthContext();
+  const canEdit = isAdmin;
+  const canDelete = isAdmin;
 
   const formatDate = (timestamp: unknown) => {
     if (!timestamp) return '';
@@ -60,6 +61,7 @@ export function PromptCard({
     a.download = `${prompt.titel.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+    trackAction('download');
     onCopy();
   };
 
@@ -121,13 +123,15 @@ export function PromptCard({
         </div>
       )}
 
-      {/* Functions */}
+      {/* Functions — klickbar, Auswahl wird (anonym) gezählt */}
       {prompt.plattformFunktionen && Object.keys(prompt.plattformFunktionen).length > 0 && (
         <div className={styles.badgeSection}>
           <span className={styles.badgeGroupLabel}>Funktionen:</span>
-          {Object.values(prompt.plattformFunktionen).flat().map(f => (
-            <Badge key={f} variant="function">{f}</Badge>
-          ))}
+          {Object.entries(prompt.plattformFunktionen).flatMap(([plattform, funktionen]) =>
+            (funktionen || []).map(f => (
+              <Badge key={`${plattform}-${f}`} variant="function" onClick={() => trackFunction(f, plattform)}>{f}</Badge>
+            ))
+          )}
         </div>
       )}
 
@@ -209,8 +213,9 @@ export function PromptCard({
       {/* Action bar */}
       <div className={styles.actionBar}>
         <div className={styles.reactions}>
+          {/* Liken ist ohne Login möglich */}
           {EMOJIS.map(emoji => (
-            <button key={emoji} className={styles.reactionBtn} onClick={() => onRate(emoji)}>
+            <button key={emoji} className={styles.reactionBtn} onClick={() => onRate(emoji)} title="Liken">
               {emoji}
               {(prompt.bewertungen?.[emoji] || 0) > 0 && (
                 <span className={styles.reactionCount}>{prompt.bewertungen[emoji]}</span>
@@ -229,18 +234,14 @@ export function PromptCard({
           <button className={styles.downloadBtn} onClick={handleDownload}>
             Download
           </button>
-          {isAuthenticated && !canDelete && onReport && (
-            <button className={styles.reportBtn} onClick={onReport}>
-              Melden
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Comments */}
+      {/* Comments — Anzeige für alle, Schreiben nur mit Login */}
       <CommentSection
         kommentare={prompt.kommentare || []}
         onAddComment={onComment}
+        onLoginRequired={onLoginRequired}
       />
     </article>
   );

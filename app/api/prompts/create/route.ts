@@ -1,47 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const FIRESTORE_PROJECT = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'prompt-managerin';
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents`;
-
-interface FirestoreValue {
-  stringValue?: string;
-  integerValue?: string;
-  doubleValue?: number;
-  booleanValue?: boolean;
-  timestampValue?: string;
-  mapValue?: { fields: Record<string, FirestoreValue> };
-  arrayValue?: { values?: FirestoreValue[] };
-  nullValue?: null;
-}
-
-function toFirestoreValue(val: unknown): FirestoreValue {
-  if (val === null || val === undefined) return { nullValue: null };
-  if (typeof val === 'string') return { stringValue: val };
-  if (typeof val === 'number') {
-    if (Number.isInteger(val)) return { integerValue: String(val) };
-    return { doubleValue: val };
-  }
-  if (typeof val === 'boolean') return { booleanValue: val };
-  if (Array.isArray(val)) {
-    return { arrayValue: { values: val.map(v => toFirestoreValue(v)) } };
-  }
-  if (typeof val === 'object') {
-    const obj = val as Record<string, unknown>;
-    const fields: Record<string, FirestoreValue> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      fields[k] = toFirestoreValue(v);
-    }
-    return { mapValue: { fields } };
-  }
-  return { stringValue: String(val) };
-}
+import {
+  FIRESTORE_URL,
+  FirestoreValue,
+  toFirestoreValue,
+  authHeaders,
+} from '@/lib/server/firestoreRest';
+import { verifyAdmin } from '@/lib/server/adminAuth';
 
 export async function POST(request: NextRequest) {
+  // Nur verifizierte Admins dürfen Prompts anlegen.
+  const admin = await verifyAdmin(request);
+  if (!admin.ok) {
+    return NextResponse.json({ error: admin.error }, { status: admin.status });
+  }
+
   try {
     const body = await request.json();
 
-    // Add default fields
+    // Standardfelder ergänzen
     const promptData = {
       ...body,
       bewertungen: { '👍': 0, '❤️': 0, '🔥': 0, '⭐': 0, '💡': 0 },
@@ -49,7 +25,6 @@ export async function POST(request: NextRequest) {
       erstelltAm: new Date().toISOString(),
     };
 
-    // Convert to Firestore format
     const fields: Record<string, FirestoreValue> = {};
     for (const [key, value] of Object.entries(promptData)) {
       if (key === 'erstelltAm') {
@@ -59,17 +34,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const url = `${FIRESTORE_URL}/prompts?key=${API_KEY}`;
+    // Schreiben mit dem Admin-ID-Token als Bearer → Firestore-Rules erlauben den Write.
+    const url = `${FIRESTORE_URL}/prompts`;
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields })
+      headers: authHeaders(admin.idToken),
+      body: JSON.stringify({ fields }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
       console.error('[API/create] Firestore error:', errText);
-      return NextResponse.json({ error: 'Create failed', details: errText }, { status: 500 });
+      const status = res.status === 403 ? 403 : 500;
+      return NextResponse.json(
+        { error: status === 403 ? 'Kein Admin-Zugriff.' : 'Create failed', details: errText },
+        { status }
+      );
     }
 
     const result = await res.json();

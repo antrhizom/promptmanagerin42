@@ -4,6 +4,17 @@ export const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/1qc0oua02l1ry7jyitimx
 // Admin E-Mail für Fallback
 export const ADMIN_EMAIL = 'antrhizom@gmail.com';
 
+// Admin-Allow-Liste (UI-Gating im Client).
+// WICHTIG: Diese Liste muss mit der Allow-Liste in firestore.rules (Funktion isAdmin)
+// übereinstimmen. Die Regeln sind die echte Sicherheitsgrenze; diese Konstante steuert
+// nur, ob Admin-Bedienelemente angezeigt werden.
+export const ADMIN_EMAILS = ['antrhizom@gmail.com'];
+
+export function istAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email.toLowerCase());
+}
+
 // Rollen
 export const ROLLEN = [
   'Lehrpersonen',

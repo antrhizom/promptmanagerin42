@@ -19,7 +19,7 @@ interface PromptFormProps {
 }
 
 export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProps) {
-  const { userCode } = useAuthContext();
+  const { adminUser } = useAuthContext();
   const isEditing = !!editingPrompt;
 
   const [titel, setTitel] = useState('');
@@ -212,7 +212,7 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
         tags: tags.split(',').map(t => t.trim()).filter(t => t),
         link1: link1.trim(),
         link2: link2.trim(),
-        erstelltVon: editingPrompt?.erstelltVon || userCode,
+        erstelltVon: editingPrompt?.erstelltVon || adminUser?.email || 'admin',
         erstelltVonRolle: rollen.join(', '),
         bildungsstufe: bildungsstufen.join(', '),
         ...(problemausgangslage.trim() && { problemausgangslage: problemausgangslage.trim() }),
