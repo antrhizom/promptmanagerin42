@@ -1,5 +1,5 @@
 // Make.com Webhook für Meldungen
-export const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/1qc0oua02l1ry7jyitimxeqfdtja54xa';
+export const MAKE_WEBHOOK_URL = 'https://hook.eu1.make.com/ed4i5281q2cccrryx29kut1ige6ln72u';
 
 // Admin E-Mail für Fallback
 export const ADMIN_EMAIL = 'antrhizom@gmail.com';
