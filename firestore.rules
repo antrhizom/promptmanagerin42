@@ -35,6 +35,18 @@ service cloud.firestore {
     }
 
     // ============================================
+    // KI-TOOLS — Verzeichnis von KI-Assistenten/Generatoren.
+    // Öffentlich lesbar; Inhalte nur Admin. Besucher dürfen nur 'bewertungen' (Liken) ändern.
+    // ============================================
+    match /kiTools/{toolId} {
+      allow read: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bewertungen']);
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
     // ANALYTICS — anonyme Besucher dürfen NUR Events anlegen (append-only),
     // Lesen nur Admin, kein Update/Delete.
     // ============================================

@@ -32,6 +32,22 @@ export interface Prompt {
   endproduktLink?: string;
 }
 
+export interface KiTool {
+  id: string;
+  name: string;
+  beschreibung: string;
+  link: string;
+  typ: string; // 'Assistent' | 'Generator'
+  kategorie?: string;
+  plattform?: string;
+  tags: string[];
+  bewertungen: { [emoji: string]: number };
+  erstelltVon?: string;
+  erstelltAm: TimestampLike;
+  deleted?: boolean;
+  deletedAt?: TimestampLike;
+}
+
 export interface Kommentar {
   id: string;
   userCode: string;

@@ -1,0 +1,96 @@
+.card {
+  background: var(--color-white, #fff);
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-6, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4, 1rem);
+}
+
+.name {
+  font-size: var(--text-lg, 1.125rem);
+  font-weight: 700;
+  color: var(--color-gray-900, #111827);
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2, 0.5rem);
+  flex-shrink: 0;
+}
+
+.editBtn, .deleteBtn {
+  font-size: var(--text-sm, 0.875rem);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  background: var(--color-white, #fff);
+  cursor: pointer;
+}
+.deleteBtn { color: var(--color-error, #dc2626); border-color: var(--color-error, #dc2626); }
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  align-items: center;
+}
+
+.description {
+  color: var(--color-gray-600, #4b5563);
+  font-size: var(--text-sm, 0.9rem);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  flex-wrap: wrap;
+  margin-top: var(--space-2, 0.5rem);
+  padding-top: var(--space-3, 0.75rem);
+  border-top: 1px solid var(--color-gray-100, #f3f4f6);
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.reactionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  background: var(--color-white, #fff);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.reactionBtn:hover { background: var(--color-gray-50, #f9fafb); }
+.reactionCount { font-size: 0.8rem; color: var(--color-gray-500, #6b7280); }
+
+.openBtn {
+  text-decoration: none;
+  background: var(--color-navy, #1e3a8a);
+  color: var(--color-white, #fff);
+  font-weight: 600;
+  font-size: var(--text-sm, 0.9rem);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md, 8px);
+}
+.openBtn:hover { opacity: 0.9; }

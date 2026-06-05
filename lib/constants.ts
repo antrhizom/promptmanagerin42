@@ -136,6 +136,14 @@ export const PLATTFORMEN_MIT_MODELLEN: { [key: string]: string[] } = Object.entr
 
 export const EMOJIS = ['👍', '❤️', '🔥', '⭐', '💡'];
 
+// KI-Assistenten / KI-Generatoren (eigenes Register)
+export const KI_TOOL_TYPEN = ['Assistent', 'Generator'];
+
+export const KI_TOOL_KATEGORIEN = [
+  'Text', 'Bild', 'Audio', 'Video', 'Code', 'Präsentation',
+  'Recherche', 'Lernen', 'Produktivität', 'Chatbot', 'Sonstiges'
+];
+
 export const OUTPUT_FORMATE = [
   'Text', 'HTML', 'Markdown', 'PDF', 'Bild', 'Video',
   'Audio', 'Präsentation', 'Tabelle', 'Code', 'JSON', 'Quiz'
