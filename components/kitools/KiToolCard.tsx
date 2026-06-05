@@ -41,6 +41,12 @@ export function KiToolCard({ tool, onLike, onEdit, onDelete, onFilterClick }: Ki
 
       {tool.beschreibung && <p className={styles.description}>{tool.beschreibung}</p>}
 
+      {tool.autorEmail && (
+        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)' }}>
+          eingereicht von {tool.autorEmail}
+        </p>
+      )}
+
       {(tool.tags || []).length > 0 && (
         <div className={styles.badgeRow}>
           {(tool.tags || []).map(t => (

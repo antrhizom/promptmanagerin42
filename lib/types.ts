@@ -17,6 +17,7 @@ export interface Prompt {
   bewertungen: { [emoji: string]: number };
   nutzungsanzahl: number;
   erstelltVon: string;
+  autorEmail?: string;
   erstelltVonRolle?: string;
   bildungsstufe?: string;
   erstelltAm: TimestampLike;
@@ -43,9 +44,20 @@ export interface KiTool {
   tags: string[];
   bewertungen: { [emoji: string]: number };
   erstelltVon?: string;
+  autorEmail?: string;
   erstelltAm: TimestampLike;
   deleted?: boolean;
   deletedAt?: TimestampLike;
+}
+
+export interface Submission {
+  id: string;
+  type: 'prompt' | 'kitool';
+  data: Record<string, unknown>;
+  autorEmail: string;
+  emailOeffentlich: boolean;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: TimestampLike;
 }
 
 export interface Kommentar {

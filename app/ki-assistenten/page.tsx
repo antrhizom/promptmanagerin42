@@ -7,6 +7,7 @@ import { useAuthContext } from '@/components/auth/AuthContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { KiToolCard } from '@/components/kitools/KiToolCard';
 import { KiToolForm } from '@/components/kitools/KiToolForm';
+import { SubmissionForm } from '@/components/submit/SubmissionForm';
 import { KI_TOOL_TYPEN, KI_TOOL_KATEGORIEN } from '@/lib/constants';
 
 export default function KiAssistentenPage() {
@@ -14,6 +15,7 @@ export default function KiAssistentenPage() {
   const { tools, loading, error, addTool, updateTool, deleteTool, likeTool } = useKiTools();
 
   const [showForm, setShowForm] = useState(false);
+  const [showSubmit, setShowSubmit] = useState(false);
   const [editing, setEditing] = useState<KiTool | null>(null);
   const [search, setSearch] = useState('');
   const [filterTyp, setFilterTyp] = useState('');
@@ -70,17 +72,30 @@ export default function KiAssistentenPage() {
           KI-Assistenten &amp; Generatoren
         </h1>
         <p style={{ color: 'var(--color-gray-500, #6b7280)', marginBottom: '1.5rem' }}>
-          Eine kuratierte Sammlung nützlicher KI-Assistenten und -Generatoren. Liken ist ohne Anmeldung möglich.
+          Eine kuratierte Sammlung nützlicher KI-Assistenten und -Generatoren (inkl. guter to-teach.ai-Aufgaben).
+          Liken ist ohne Anmeldung möglich.
         </p>
 
-        {isAdmin && !showForm && (
-          <button
-            onClick={() => { setEditing(null); setShowForm(true); }}
-            style={{ marginBottom: '1.25rem', padding: '0.6rem 1.25rem', background: 'var(--color-navy, #1e3a8a)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Neues KI-Tool
-          </button>
+        {showSubmit && (
+          <SubmissionForm type="kitool" onClose={() => setShowSubmit(false)} />
         )}
+
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+          {isAdmin && !showForm && (
+            <button
+              onClick={() => { setEditing(null); setShowForm(true); }}
+              style={{ padding: '0.6rem 1.25rem', background: 'var(--color-navy, #1e3a8a)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Neues KI-Tool
+            </button>
+          )}
+          <button
+            onClick={() => setShowSubmit(true)}
+            style={{ padding: '0.6rem 1.25rem', background: 'var(--color-white, #fff)', border: '1px solid var(--color-navy, #1e3a8a)', color: 'var(--color-navy, #1e3a8a)', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
+          >
+            + KI-Tool / to-teach-Aufgabe vorschlagen
+          </button>
+        </div>
 
         {isAdmin && showForm && (
           <KiToolForm

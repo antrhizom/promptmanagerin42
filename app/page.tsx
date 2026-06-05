@@ -8,6 +8,7 @@ import { useAuthContext } from '@/components/auth/AuthContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { HeroSection } from '@/components/layout/HeroSection';
 import { UserLoginModal } from '@/components/auth/UserLoginModal';
+import { SubmissionForm } from '@/components/submit/SubmissionForm';
 import { PromptForm } from '@/components/prompt/PromptForm';
 import { PromptList } from '@/components/prompt/PromptList';
 import { FilterBar } from '@/components/filter/FilterBar';
@@ -27,6 +28,7 @@ export default function Home() {
   } = useFilters(prompts);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSubmit, setShowSubmit] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
 
@@ -94,6 +96,10 @@ export default function Home() {
         <UserLoginModal onClose={() => setShowLoginModal(false)} />
       )}
 
+      {showSubmit && (
+        <SubmissionForm type="prompt" onClose={() => setShowSubmit(false)} />
+      )}
+
       {!isAuthenticated && !isAdmin && (
         <HeroSection onJoinClick={() => setShowLoginModal(true)} />
       )}
@@ -105,6 +111,15 @@ export default function Home() {
           onCancel={handleFormCancel}
         />
       )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+        <button
+          onClick={() => setShowSubmit(true)}
+          style={{ padding: '0.55rem 1.1rem', background: 'var(--color-white, #fff)', border: '1px solid var(--color-navy, #1e3a8a)', color: 'var(--color-navy, #1e3a8a)', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
+        >
+          + Prompt vorschlagen
+        </button>
+      </div>
 
       <FilterBar
         filters={filters}

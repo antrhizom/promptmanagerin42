@@ -47,6 +47,24 @@ service cloud.firestore {
     }
 
     // ============================================
+    // SUBMISSIONS — Community-Einreichungen (neue Prompts / KI-Tools).
+    // Jeder darf eine Einreichung mit status 'pending' anlegen; Lesen/Verwalten nur Admin.
+    // So sind unfreigeschaltete Inhalte NIE öffentlich sichtbar.
+    // ============================================
+    match /submissions/{subId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['type', 'data', 'autorEmail', 'emailOeffentlich', 'status', 'createdAt']) &&
+        request.resource.data.type in ['prompt', 'kitool'] &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.data is map &&
+        request.resource.data.autorEmail is string &&
+        request.resource.data.autorEmail.size() <= 200 &&
+        request.resource.data.emailOeffentlich is bool &&
+        request.resource.data.createdAt is timestamp;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ============================================
     // ANALYTICS — anonyme Besucher dürfen NUR Events anlegen (append-only),
     // Lesen nur Admin, kein Update/Delete.
     // ============================================

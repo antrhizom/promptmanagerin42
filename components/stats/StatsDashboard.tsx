@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
 import { useAuthContext } from '@/components/auth/AuthContext';
+import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
 import styles from './StatsDashboard.module.css';
 
 interface StatsDashboardProps {
@@ -63,6 +64,9 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
       <h1 className={styles.title}>Dashboard</h1>
       <p className={styles.subtitle}>Übersicht über alle Aktivitäten der Prompt Managerin</p>
+
+      {/* Offene Community-Einreichungen zur Freischaltung */}
+      <SubmissionsReview />
 
       {/* Besucher & Funktionen (anonymes Tracking) */}
       <div className={styles.sectionPlatform}>
