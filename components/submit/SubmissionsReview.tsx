@@ -75,11 +75,16 @@ export function SubmissionsReview() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <strong>{titel}</strong>
                   <span style={{ fontSize: '0.75rem', background: 'var(--color-gray-100,#f3f4f6)', borderRadius: '999px', padding: '0.1rem 0.55rem' }}>
-                    {s.type === 'prompt' ? 'Prompt' : 'KI-Tool'}
+                    {s.type === 'prompt' ? 'Prompt' : 'KI-Tool-Beispiel'}
                   </span>
                 </div>
+                {s.type === 'kitool' && d.toolName && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-primary-blue,#0050b3)', fontWeight: 600, margin: '0.2rem 0' }}>
+                    → für Tool: {d.toolName as string}
+                  </div>
+                )}
                 {d.beschreibung && <p style={{ margin: '0.35rem 0', color: 'var(--color-gray-600,#4b5563)', fontSize: '0.9rem' }}>{d.beschreibung as string}</p>}
-                {s.type === 'prompt' && d.promptText && (
+                {d.promptText && (
                   <pre style={{ whiteSpace: 'pre-wrap', background: 'var(--color-gray-50,#f9fafb)', padding: '0.5rem', borderRadius: '6px', fontSize: '0.8rem', maxHeight: '140px', overflow: 'auto' }}>{d.promptText as string}</pre>
                 )}
                 {s.type === 'kitool' && d.link && (

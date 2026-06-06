@@ -1,12 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
-import {
-  KI_TOOL_TYPEN,
-  KI_TOOL_KATEGORIEN,
-  PLATTFORMEN_MIT_MODELLEN,
-} from '@/lib/constants';
+import { PLATTFORMEN_MIT_MODELLEN } from '@/lib/constants';
 
 type SubmissionType = 'prompt' | 'kitool';
 
@@ -45,13 +41,21 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
   const [plattform, setPlattform] = useState('');
   const [tags, setTags] = useState('');
 
-  // KI-Tool-Felder
-  const [name, setName] = useState('');
-  const [link, setLink] = useState('');
-  const [typ, setTyp] = useState(KI_TOOL_TYPEN[0]);
-  const [kategorie, setKategorie] = useState('');
+  // KI-Tool-Beispiel-Felder
+  const [tools, setTools] = useState<{ id: string; name: string }[]>([]);
+  const [toolId, setToolId] = useState('');
+  const [exLink, setExLink] = useState('');
 
   const plattformen = Object.keys(PLATTFORMEN_MIT_MODELLEN);
+
+  // Bestehende KI-Tools für die Auswahl laden.
+  useEffect(() => {
+    if (type !== 'kitool') return;
+    fetch('/api/kitools')
+      .then(r => r.json())
+      .then(d => setTools((d.tools || []).map((t: { id: string; name: string }) => ({ id: t.id, name: t.name }))))
+      .catch(() => {});
+  }, [type]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,15 +73,19 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       };
     } else {
-      if (!name.trim() || !link.trim()) { setError('Name und Link sind erforderlich.'); return; }
+      if (!toolId) { setError('Bitte ein KI-Tool auswählen.'); return; }
+      if (!titel.trim()) { setError('Bitte einen Titel für das Beispiel angeben.'); return; }
+      if (!exLink.trim() && !promptText.trim()) {
+        setError('Bitte einen Link ODER einen Prompt-Text zum Beispiel angeben.'); return;
+      }
+      const tool = tools.find(t => t.id === toolId);
       data = {
-        name: name.trim(),
+        toolId,
+        toolName: tool?.name || '',
+        titel: titel.trim(),
         beschreibung: beschreibung.trim(),
-        link: link.trim(),
-        typ,
-        kategorie,
-        plattform: plattform.trim(),
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        link: exLink.trim(),
+        promptText: promptText.trim(),
       };
     }
 
@@ -100,7 +108,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
     }
   };
 
-  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'KI-Tool / to-teach-Aufgabe vorschlagen';
+  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'Beispiel / Aufgabe für ein KI-Tool vorschlagen';
 
   if (done) {
     return (
@@ -148,47 +156,44 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
                 {plattformen.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
+            <div style={field}>
+              <label style={labelStyle}>Tags (kommagetrennt)</label>
+              <input style={inputStyle} value={tags} onChange={e => setTags(e.target.value)} placeholder="z.B. deutsch, b1, korrektur" />
+            </div>
           </>
         ) : (
           <>
             <div style={field}>
-              <label style={labelStyle}>Name *</label>
-              <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="z.B. to-teach Arbeitsblatt-Generator" />
+              <label style={labelStyle}>KI-Tool *</label>
+              <select style={inputStyle} value={toolId} onChange={e => setToolId(e.target.value)}>
+                <option value="">– bitte ein Tool wählen –</option>
+                {tools.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '0.3rem 0 0' }}>
+                Dein Beispiel wird unter diesem Tool einsortiert.
+              </p>
+            </div>
+            <div style={field}>
+              <label style={labelStyle}>Titel des Beispiels *</label>
+              <input style={inputStyle} value={titel} onChange={e => setTitel(e.target.value)} placeholder="z.B. Kaufvertrag-Arbeitsblatt für die BFS" />
             </div>
             <div style={field}>
               <label style={labelStyle}>Beschreibung</label>
-              <input style={inputStyle} value={beschreibung} onChange={e => setBeschreibung(e.target.value)} placeholder="Was kann dieses Tool / diese Aufgabe?" />
+              <input style={inputStyle} value={beschreibung} onChange={e => setBeschreibung(e.target.value)} placeholder="Was zeigt dieses Beispiel?" />
             </div>
             <div style={field}>
-              <label style={labelStyle}>Link (URL) *</label>
-              <input style={inputStyle} value={link} onChange={e => setLink(e.target.value)} placeholder="https://..." />
-            </div>
-            <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
-              <div style={{ ...field, flex: '1 1 140px' }}>
-                <label style={labelStyle}>Typ</label>
-                <select style={inputStyle} value={typ} onChange={e => setTyp(e.target.value)}>
-                  {KI_TOOL_TYPEN.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div style={{ ...field, flex: '1 1 140px' }}>
-                <label style={labelStyle}>Kategorie</label>
-                <select style={inputStyle} value={kategorie} onChange={e => setKategorie(e.target.value)}>
-                  <option value="">– keine –</option>
-                  {KI_TOOL_KATEGORIEN.map(k => <option key={k} value={k}>{k}</option>)}
-                </select>
-              </div>
+              <label style={labelStyle}>Link zum Beispiel</label>
+              <input style={inputStyle} value={exLink} onChange={e => setExLink(e.target.value)} placeholder="https://... (z.B. to-teach-Share-Link, fobizz-Remix)" />
             </div>
             <div style={field}>
-              <label style={labelStyle}>Plattform / Anbieter</label>
-              <input style={inputStyle} value={plattform} onChange={e => setPlattform(e.target.value)} placeholder="z.B. to-teach, OpenAI" />
+              <label style={labelStyle}>Prompt-Text (optional)</label>
+              <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'vertical' }} value={promptText} onChange={e => setPromptText(e.target.value)} placeholder="Falls das Beispiel ein Prompt ist..." />
             </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '-0.4rem 0 0.6rem' }}>
+              Mindestens ein Link oder ein Prompt-Text ist nötig.
+            </p>
           </>
         )}
-
-        <div style={field}>
-          <label style={labelStyle}>Tags (kommagetrennt)</label>
-          <input style={inputStyle} value={tags} onChange={e => setTags(e.target.value)} placeholder="z.B. deutsch, b1, korrektur" />
-        </div>
 
         <hr style={{ border: 'none', borderTop: '1px solid var(--color-gray-100, #f3f4f6)', margin: '0.5rem 0 0.9rem' }} />
 

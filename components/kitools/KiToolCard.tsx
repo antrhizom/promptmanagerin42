@@ -52,6 +52,7 @@ export function KiToolCard({ tool, onLike, onEdit, onDelete }: KiToolCardProps) 
               <div key={i} className={styles.beispiel}>
                 <div className={styles.beispielTitel}>{b.titel}</div>
                 {b.beschreibung && <div className={styles.beispielText}>{b.beschreibung}</div>}
+                {b.autorEmail && <div className={styles.beispielAutor}>eingereicht von {b.autorEmail}</div>}
                 {b.promptText && (
                   <details className={styles.promptBox}>
                     <summary className={styles.promptBoxSummary}>Prompt anzeigen</summary>

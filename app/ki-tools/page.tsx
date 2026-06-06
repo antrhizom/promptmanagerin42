@@ -86,7 +86,7 @@ export default function KiAssistentenPage() {
             onClick={() => setShowSubmit(true)}
             style={{ padding: '0.6rem 1.25rem', background: 'var(--color-white, #fff)', border: '1px solid var(--color-navy, #1e3a8a)', color: 'var(--color-navy, #1e3a8a)', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
           >
-            + KI-Tool / to-teach-Aufgabe vorschlagen
+            + Beispiel / Aufgabe vorschlagen
           </button>
         </div>
 

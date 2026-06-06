@@ -76,20 +76,52 @@ export async function POST(request: NextRequest) {
       const type = sub.type as string;
       const data = (sub.data as Record<string, unknown>) || {};
       const autor = sub.emailOeffentlich ? (sub.autorEmail as string) : null;
-      const target = type === 'prompt' ? 'prompts' : 'kiTools';
-      const fields = type === 'prompt'
-        ? buildPromptFields(data, autor, now)
-        : buildKiToolFields(data, autor, now);
 
-      const createRes = await fetch(`${FIRESTORE_URL}/${target}`, {
-        method: 'POST',
-        headers: authHeaders(admin.idToken),
-        body: JSON.stringify({ fields }),
-      });
-      if (!createRes.ok) {
-        const errText = await createRes.text();
-        console.error('[API/submissions/review] publish error:', errText);
-        return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
+      if (type === 'kitool' && data.toolId) {
+        // KI-Tool-Einreichung = Beispiel für ein bestehendes Tool → an dessen beispiele anhängen.
+        const toolId = String(data.toolId);
+        const toolRes = await fetch(`${FIRESTORE_URL}/kiTools/${toolId}`, {
+          headers: authHeaders(admin.idToken),
+        });
+        if (!toolRes.ok) {
+          return NextResponse.json({ error: 'Ziel-Tool nicht gefunden' }, { status: 404 });
+        }
+        const tool = parseFirestoreDoc(await toolRes.json());
+        const beispiele = Array.isArray(tool.beispiele) ? (tool.beispiele as Record<string, unknown>[]) : [];
+        const neu: Record<string, unknown> = { titel: data.titel || '' };
+        if (data.beschreibung) neu.beschreibung = data.beschreibung;
+        if (data.link) neu.link = data.link;
+        if (data.promptText) neu.promptText = data.promptText;
+        if (autor) neu.autorEmail = autor;
+        const updated = [...beispiele, neu];
+
+        const patch = await fetch(`${FIRESTORE_URL}/kiTools/${toolId}?updateMask.fieldPaths=beispiele`, {
+          method: 'PATCH',
+          headers: authHeaders(admin.idToken),
+          body: JSON.stringify({ fields: { beispiele: toFirestoreValue(updated) } }),
+        });
+        if (!patch.ok) {
+          const errText = await patch.text();
+          console.error('[API/submissions/review] beispiel append error:', errText);
+          return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
+        }
+      } else {
+        // Prompt-Einreichung (oder Legacy-Tool ohne toolId) → neues Dokument anlegen.
+        const target = type === 'prompt' ? 'prompts' : 'kiTools';
+        const fields = type === 'prompt'
+          ? buildPromptFields(data, autor, now)
+          : buildKiToolFields(data, autor, now);
+
+        const createRes = await fetch(`${FIRESTORE_URL}/${target}`, {
+          method: 'POST',
+          headers: authHeaders(admin.idToken),
+          body: JSON.stringify({ fields }),
+        });
+        if (!createRes.ok) {
+          const errText = await createRes.text();
+          console.error('[API/submissions/review] publish error:', errText);
+          return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
+        }
       }
     }
 

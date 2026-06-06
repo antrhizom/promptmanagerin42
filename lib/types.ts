@@ -38,6 +38,7 @@ export interface KiToolBeispiel {
   beschreibung?: string;
   link?: string;
   promptText?: string;
+  autorEmail?: string;
 }
 
 export interface KiTool {
