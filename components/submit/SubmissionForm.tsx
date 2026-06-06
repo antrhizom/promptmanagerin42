@@ -45,6 +45,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
   const [tools, setTools] = useState<{ id: string; name: string }[]>([]);
   const [toolId, setToolId] = useState('');
   const [exLink, setExLink] = useState('');
+  const [exTags, setExTags] = useState('');
 
   const plattformen = Object.keys(PLATTFORMEN_MIT_MODELLEN);
 
@@ -86,6 +87,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         beschreibung: beschreibung.trim(),
         link: exLink.trim(),
         promptText: promptText.trim(),
+        tags: exTags.split(',').map(t => t.trim()).filter(Boolean),
       };
     }
 
@@ -188,6 +190,10 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
             <div style={field}>
               <label style={labelStyle}>Prompt-Text (optional)</label>
               <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'vertical' }} value={promptText} onChange={e => setPromptText(e.target.value)} placeholder="Falls das Beispiel ein Prompt ist..." />
+            </div>
+            <div style={field}>
+              <label style={labelStyle}>Tags (kommagetrennt)</label>
+              <input style={inputStyle} value={exTags} onChange={e => setExTags(e.target.value)} placeholder="z.B. recht, abu, arbeitsblatt" />
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '-0.4rem 0 0.6rem' }}>
               Mindestens ein Link oder ein Prompt-Text ist nötig.

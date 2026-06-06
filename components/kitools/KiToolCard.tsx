@@ -66,6 +66,11 @@ export function KiToolCard({ tool, onLikeBeispiel, onEdit, onDelete }: KiToolCar
                 <div key={bId} className={styles.beispiel}>
                   <div className={styles.beispielTitel}>{b.titel}</div>
                   {b.beschreibung && <div className={styles.beispielText}>{b.beschreibung}</div>}
+                  {(b.tags || []).length > 0 && (
+                    <div className={styles.badgeRow} style={{ marginTop: '0.35rem' }}>
+                      {(b.tags || []).map(t => <Badge key={t} variant="tag">#{t}</Badge>)}
+                    </div>
+                  )}
                   {b.autorEmail && <div className={styles.beispielAutor}>eingereicht von {b.autorEmail}</div>}
                   {b.promptText && (
                     <details className={styles.promptBox}>

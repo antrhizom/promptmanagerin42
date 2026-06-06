@@ -1,13 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { KiTool, KiToolBeispiel } from '@/lib/types';
+import { KiTool } from '@/lib/types';
 import { KI_TOOL_TYPEN, KI_TOOL_KATEGORIEN } from '@/lib/constants';
 
 interface KiToolFormProps {
   editingTool?: KiTool | null;
   onSubmit: (data: Partial<KiTool>) => Promise<void>;
   onCancel: () => void;
+}
+
+// Formular-interne Beispiel-Darstellung (Tags als kommagetrennter Text).
+interface BeispielForm {
+  id: string;
+  titel: string;
+  beschreibung: string;
+  link: string;
+  promptText: string;
+  tags: string;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -37,7 +47,16 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
   const [kategorie, setKategorie] = useState(editingTool?.kategorie || '');
   const [plattform, setPlattform] = useState(editingTool?.plattform || '');
   const [tags, setTags] = useState((editingTool?.tags || []).join(', '));
-  const [beispiele, setBeispiele] = useState<KiToolBeispiel[]>(editingTool?.beispiele || []);
+  const [beispiele, setBeispiele] = useState<BeispielForm[]>(
+    (editingTool?.beispiele || []).map(b => ({
+      id: b.id || '',
+      titel: b.titel || '',
+      beschreibung: b.beschreibung || '',
+      link: b.link || '',
+      promptText: b.promptText || '',
+      tags: (b.tags || []).join(', '),
+    }))
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,8 +64,8 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
     (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID()
       : `b_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  const addBeispiel = () => setBeispiele(prev => [...prev, { id: genId(), titel: '', beschreibung: '', link: '', promptText: '' }]);
-  const updateBeispiel = (i: number, field: keyof KiToolBeispiel, value: string) =>
+  const addBeispiel = () => setBeispiele(prev => [...prev, { id: genId(), titel: '', beschreibung: '', link: '', promptText: '', tags: '' }]);
+  const updateBeispiel = (i: number, field: keyof BeispielForm, value: string) =>
     setBeispiele(prev => prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b)));
   const removeBeispiel = (i: number) => setBeispiele(prev => prev.filter((_, idx) => idx !== i));
 
@@ -69,13 +88,17 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         beispiele: beispiele
           .filter(b => b.titel.trim())
-          .map(b => ({
-            id: b.id || genId(),
-            titel: b.titel.trim(),
-            ...(b.beschreibung?.trim() && { beschreibung: b.beschreibung.trim() }),
-            ...(b.link?.trim() && { link: b.link.trim() }),
-            ...(b.promptText?.trim() && { promptText: b.promptText.trim() }),
-          })),
+          .map(b => {
+            const tagList = b.tags.split(',').map(t => t.trim()).filter(Boolean);
+            return {
+              id: b.id || genId(),
+              titel: b.titel.trim(),
+              ...(b.beschreibung.trim() && { beschreibung: b.beschreibung.trim() }),
+              ...(b.link.trim() && { link: b.link.trim() }),
+              ...(b.promptText.trim() && { promptText: b.promptText.trim() }),
+              ...(tagList.length > 0 && { tags: tagList }),
+            };
+          }),
       });
       onCancel();
     } catch (err) {
@@ -157,7 +180,8 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
             <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.titel} onChange={e => updateBeispiel(i, 'titel', e.target.value)} placeholder="Titel des Beispiels *" />
             <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.beschreibung || ''} onChange={e => updateBeispiel(i, 'beschreibung', e.target.value)} placeholder="Kurzbeschreibung (optional)" />
             <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.link || ''} onChange={e => updateBeispiel(i, 'link', e.target.value)} placeholder="Link zum Beispiel (optional, https://...)" />
-            <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={b.promptText || ''} onChange={e => updateBeispiel(i, 'promptText', e.target.value)} placeholder="Prompt-Text (optional)" />
+            <textarea style={{ ...inputStyle, marginBottom: '0.4rem', minHeight: '60px', resize: 'vertical' }} value={b.promptText || ''} onChange={e => updateBeispiel(i, 'promptText', e.target.value)} placeholder="Prompt-Text (optional)" />
+            <input style={inputStyle} value={b.tags} onChange={e => updateBeispiel(i, 'tags', e.target.value)} placeholder="Tags des Beispiels (kommagetrennt, optional)" />
           </div>
         ))}
         <button type="button" onClick={addBeispiel} style={{ padding: '0.45rem 0.9rem', background: 'var(--color-white, #fff)', border: '1px dashed var(--color-navy, #1e3a8a)', color: 'var(--color-navy, #1e3a8a)', borderRadius: 'var(--radius-md, 8px)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>

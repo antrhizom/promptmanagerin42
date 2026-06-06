@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
         if (data.beschreibung) neu.beschreibung = data.beschreibung;
         if (data.link) neu.link = data.link;
         if (data.promptText) neu.promptText = data.promptText;
+        if (Array.isArray(data.tags) && data.tags.length > 0) neu.tags = data.tags;
         if (autor) neu.autorEmail = autor;
         const updated = [...beispiele, neu];
 
