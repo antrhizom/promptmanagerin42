@@ -33,6 +33,13 @@ export interface Prompt {
   endproduktLink?: string;
 }
 
+export interface KiToolBeispiel {
+  titel: string;
+  beschreibung?: string;
+  link?: string;
+  promptText?: string;
+}
+
 export interface KiTool {
   id: string;
   name: string;
@@ -42,6 +49,7 @@ export interface KiTool {
   kategorie?: string;
   plattform?: string;
   tags: string[];
+  beispiele?: KiToolBeispiel[];
   bewertungen: { [emoji: string]: number };
   erstelltVon?: string;
   autorEmail?: string;

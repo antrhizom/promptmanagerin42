@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { KiTool } from '@/lib/types';
+import { KiTool, KiToolBeispiel } from '@/lib/types';
 import { KI_TOOL_TYPEN, KI_TOOL_KATEGORIEN } from '@/lib/constants';
 
 interface KiToolFormProps {
@@ -37,8 +37,14 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
   const [kategorie, setKategorie] = useState(editingTool?.kategorie || '');
   const [plattform, setPlattform] = useState(editingTool?.plattform || '');
   const [tags, setTags] = useState((editingTool?.tags || []).join(', '));
+  const [beispiele, setBeispiele] = useState<KiToolBeispiel[]>(editingTool?.beispiele || []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const addBeispiel = () => setBeispiele(prev => [...prev, { titel: '', beschreibung: '', link: '', promptText: '' }]);
+  const updateBeispiel = (i: number, field: keyof KiToolBeispiel, value: string) =>
+    setBeispiele(prev => prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b)));
+  const removeBeispiel = (i: number) => setBeispiele(prev => prev.filter((_, idx) => idx !== i));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +63,14 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
         kategorie: kategorie || '',
         plattform: plattform.trim(),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        beispiele: beispiele
+          .filter(b => b.titel.trim())
+          .map(b => ({
+            titel: b.titel.trim(),
+            ...(b.beschreibung?.trim() && { beschreibung: b.beschreibung.trim() }),
+            ...(b.link?.trim() && { link: b.link.trim() }),
+            ...(b.promptText?.trim() && { promptText: b.promptText.trim() }),
+          })),
       });
       onCancel();
     } catch (err) {
@@ -119,6 +133,31 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
       <div style={fieldStyle}>
         <label style={labelStyle}>Tags (kommagetrennt)</label>
         <input style={inputStyle} value={tags} onChange={e => setTags(e.target.value)} placeholder="z.B. kostenlos, schule, bilder" />
+      </div>
+
+      {/* Konkrete Beispiele */}
+      <div style={{ ...fieldStyle, borderTop: '1px solid var(--color-gray-200, #e5e7eb)', paddingTop: '1rem' }}>
+        <label style={labelStyle}>Konkrete Beispiele</label>
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-gray-500, #6b7280)', margin: '0 0 0.6rem' }}>
+          Konkrete Anwendungs-Beispiele für dieses Tool (z.B. ein to-teach-Arbeitsblatt, ein fobizz-Remix). Titel ist Pflicht, der Rest optional.
+        </p>
+        {beispiele.map((b, i) => (
+          <div key={i} style={{ border: '1px solid var(--color-gray-200, #e5e7eb)', borderRadius: 'var(--radius-md, 8px)', padding: '0.75rem', marginBottom: '0.6rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <strong style={{ fontSize: '0.85rem' }}>Beispiel {i + 1}</strong>
+              <button type="button" onClick={() => removeBeispiel(i)} style={{ border: 'none', background: 'none', color: 'var(--color-error, #dc2626)', cursor: 'pointer', fontSize: '0.85rem' }}>
+                Entfernen
+              </button>
+            </div>
+            <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.titel} onChange={e => updateBeispiel(i, 'titel', e.target.value)} placeholder="Titel des Beispiels *" />
+            <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.beschreibung || ''} onChange={e => updateBeispiel(i, 'beschreibung', e.target.value)} placeholder="Kurzbeschreibung (optional)" />
+            <input style={{ ...inputStyle, marginBottom: '0.4rem' }} value={b.link || ''} onChange={e => updateBeispiel(i, 'link', e.target.value)} placeholder="Link zum Beispiel (optional, https://...)" />
+            <textarea style={{ ...inputStyle, minHeight: '60px', resize: 'vertical' }} value={b.promptText || ''} onChange={e => updateBeispiel(i, 'promptText', e.target.value)} placeholder="Prompt-Text (optional)" />
+          </div>
+        ))}
+        <button type="button" onClick={addBeispiel} style={{ padding: '0.45rem 0.9rem', background: 'var(--color-white, #fff)', border: '1px dashed var(--color-navy, #1e3a8a)', color: 'var(--color-navy, #1e3a8a)', borderRadius: 'var(--radius-md, 8px)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+          + Beispiel hinzufügen
+        </button>
       </div>
 
       {error && (
