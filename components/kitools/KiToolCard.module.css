@@ -133,7 +133,7 @@
   padding-top: var(--space-3, 0.75rem);
   border-top: 1px solid var(--color-gray-100, #f3f4f6);
 }
-.reactions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.reactions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-top: 0.5rem; }
 .reactionBtn {
   display: inline-flex; align-items: center; gap: 0.25rem;
   border: 1px solid var(--color-gray-200, #e5e7eb);

@@ -34,6 +34,7 @@ export interface Prompt {
 }
 
 export interface KiToolBeispiel {
+  id: string;
   titel: string;
   beschreibung?: string;
   link?: string;
@@ -51,6 +52,8 @@ export interface KiTool {
   plattform?: string;
   tags: string[];
   beispiele?: KiToolBeispiel[];
+  // Likes je Beispiel (anonym), getrennt von den (admin-kuratierten) Beispielen gespeichert.
+  beispielBewertungen?: { [beispielId: string]: { [emoji: string]: number } };
   bewertungen: { [emoji: string]: number };
   erstelltVon?: string;
   autorEmail?: string;

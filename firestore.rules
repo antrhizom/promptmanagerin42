@@ -41,8 +41,11 @@ service cloud.firestore {
     match /kiTools/{toolId} {
       allow read: if true;
       allow create: if isAdmin();
+      // Anonym nur die Like-Maps änderbar (Tool-Likes bzw. Likes je Beispiel);
+      // die Beispiele selbst und alle anderen Inhalte bleiben Admin-only.
       allow update: if isAdmin()
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bewertungen']);
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bewertungen'])
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['beispielBewertungen']);
       allow delete: if isAdmin();
     }
 

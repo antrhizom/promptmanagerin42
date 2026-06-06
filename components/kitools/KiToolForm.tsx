@@ -41,7 +41,11 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const addBeispiel = () => setBeispiele(prev => [...prev, { titel: '', beschreibung: '', link: '', promptText: '' }]);
+  const genId = () =>
+    (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `b_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const addBeispiel = () => setBeispiele(prev => [...prev, { id: genId(), titel: '', beschreibung: '', link: '', promptText: '' }]);
   const updateBeispiel = (i: number, field: keyof KiToolBeispiel, value: string) =>
     setBeispiele(prev => prev.map((b, idx) => (idx === i ? { ...b, [field]: value } : b)));
   const removeBeispiel = (i: number) => setBeispiele(prev => prev.filter((_, idx) => idx !== i));
@@ -66,6 +70,7 @@ export function KiToolForm({ editingTool, onSubmit, onCancel }: KiToolFormProps)
         beispiele: beispiele
           .filter(b => b.titel.trim())
           .map(b => ({
+            id: b.id || genId(),
             titel: b.titel.trim(),
             ...(b.beschreibung?.trim() && { beschreibung: b.beschreibung.trim() }),
             ...(b.link?.trim() && { link: b.link.trim() }),

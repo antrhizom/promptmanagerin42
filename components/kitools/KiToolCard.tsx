@@ -8,13 +8,14 @@ import styles from './KiToolCard.module.css';
 
 interface KiToolCardProps {
   tool: KiTool;
-  onLike: (emoji: string) => void;
+  onLikeBeispiel: (beispielId: string, emoji: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function KiToolCard({ tool, onLike, onEdit, onDelete }: KiToolCardProps) {
+export function KiToolCard({ tool, onLikeBeispiel, onEdit, onDelete }: KiToolCardProps) {
   const beispiele = tool.beispiele || [];
+  const likes = tool.beispielBewertungen || {};
 
   return (
     <details className={styles.card}>
@@ -34,64 +35,14 @@ export function KiToolCard({ tool, onLike, onEdit, onDelete }: KiToolCardProps) 
       <div className={styles.body}>
         {tool.beschreibung && <p className={styles.description}>{tool.beschreibung}</p>}
 
-        {tool.autorEmail && (
-          <p className={styles.autor}>eingereicht von {tool.autorEmail}</p>
-        )}
-
         {(tool.tags || []).length > 0 && (
           <div className={styles.badgeRow}>
             {(tool.tags || []).map(t => <Badge key={t} variant="tag">#{t}</Badge>)}
           </div>
         )}
 
-        {/* Konkrete Beispiele */}
-        {beispiele.length > 0 && (
-          <div className={styles.beispiele}>
-            <div className={styles.beispieleTitle}>Konkrete Beispiele</div>
-            {beispiele.map((b, i) => (
-              <div key={i} className={styles.beispiel}>
-                <div className={styles.beispielTitel}>{b.titel}</div>
-                {b.beschreibung && <div className={styles.beispielText}>{b.beschreibung}</div>}
-                {b.autorEmail && <div className={styles.beispielAutor}>eingereicht von {b.autorEmail}</div>}
-                {b.promptText && (
-                  <details className={styles.promptBox}>
-                    <summary className={styles.promptBoxSummary}>Prompt anzeigen</summary>
-                    <pre className={styles.promptPre}>{b.promptText}</pre>
-                  </details>
-                )}
-                {b.link && (
-                  <a
-                    href={b.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.beispielLink}
-                    onClick={() => trackAction('open-kitool-beispiel')}
-                  >
-                    ↗ Beispiel öffnen
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {beispiele.length === 0 && (
-          <p className={styles.keineBeispiele}>Noch keine Beispiele hinterlegt.</p>
-        )}
-
-        {/* Aktionsleiste */}
-        <div className={styles.actionBar}>
-          <div className={styles.reactions}>
-            {EMOJIS.map(emoji => (
-              <button key={emoji} className={styles.reactionBtn} onClick={() => onLike(emoji)} title="Liken">
-                {emoji}
-                {(tool.bewertungen?.[emoji] || 0) > 0 && (
-                  <span className={styles.reactionCount}>{tool.bewertungen[emoji]}</span>
-                )}
-              </button>
-            ))}
-          </div>
-          {tool.link && (
+        {tool.link && (
+          <div>
             <a
               className={styles.openBtn}
               href={tool.link}
@@ -101,8 +52,55 @@ export function KiToolCard({ tool, onLike, onEdit, onDelete }: KiToolCardProps) 
             >
               ↗ Tool öffnen
             </a>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Konkrete Beispiele — jedes mit eigener Bewertung */}
+        {beispiele.length > 0 && (
+          <div className={styles.beispiele}>
+            <div className={styles.beispieleTitle}>Konkrete Beispiele</div>
+            {beispiele.map((b, i) => {
+              const bId = b.id || String(i);
+              const bw = likes[bId] || {};
+              return (
+                <div key={bId} className={styles.beispiel}>
+                  <div className={styles.beispielTitel}>{b.titel}</div>
+                  {b.beschreibung && <div className={styles.beispielText}>{b.beschreibung}</div>}
+                  {b.autorEmail && <div className={styles.beispielAutor}>eingereicht von {b.autorEmail}</div>}
+                  {b.promptText && (
+                    <details className={styles.promptBox}>
+                      <summary className={styles.promptBoxSummary}>Prompt anzeigen</summary>
+                      <pre className={styles.promptPre}>{b.promptText}</pre>
+                    </details>
+                  )}
+                  {b.link && (
+                    <a
+                      href={b.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.beispielLink}
+                      onClick={() => trackAction('open-kitool-beispiel')}
+                    >
+                      ↗ Beispiel öffnen
+                    </a>
+                  )}
+                  <div className={styles.reactions}>
+                    {EMOJIS.map(emoji => (
+                      <button key={emoji} className={styles.reactionBtn} onClick={() => onLikeBeispiel(bId, emoji)} title="Liken">
+                        {emoji}
+                        {(bw[emoji] || 0) > 0 && <span className={styles.reactionCount}>{bw[emoji]}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {beispiele.length === 0 && (
+          <p className={styles.keineBeispiele}>Noch keine Beispiele hinterlegt.</p>
+        )}
 
         {(onEdit || onDelete) && (
           <div className={styles.adminActions}>

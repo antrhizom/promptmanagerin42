@@ -73,23 +73,26 @@ export function useKiTools() {
     await updateTool(id, { deleted: true, deletedAt: new Date().toISOString() });
   }, [updateTool]);
 
-  // --- Öffentlich: Liken (Emoji +1) ---
-  const likeTool = useCallback(async (id: string, emoji: string) => {
-    const tool = tools.find(t => t.id === id);
+  // --- Öffentlich: Liken eines konkreten Beispiels (Emoji +1) ---
+  const likeBeispiel = useCallback(async (toolId: string, beispielId: string, emoji: string) => {
+    const tool = tools.find(t => t.id === toolId);
     if (!tool) return;
-    const neue = { ...(tool.bewertungen || {}), [emoji]: ((tool.bewertungen || {})[emoji] || 0) + 1 };
-    setTools(prev => prev.map(t => (t.id === id ? { ...t, bewertungen: neue } : t)));
-    trackAction('like-kitool');
+    const map = { ...(tool.beispielBewertungen || {}) };
+    const fuer = { ...(map[beispielId] || {}) };
+    fuer[emoji] = (fuer[emoji] || 0) + 1;
+    map[beispielId] = fuer;
+    setTools(prev => prev.map(t => (t.id === toolId ? { ...t, beispielBewertungen: map } : t)));
+    trackAction('like-kitool-beispiel');
     try {
       await fetch('/api/kitools/like', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toolId: id, emoji }),
+        body: JSON.stringify({ toolId, beispielId, emoji }),
       });
     } catch {
       // unkritisch
     }
   }, [tools]);
 
-  return { tools, loading, error, refresh, addTool, updateTool, deleteTool, likeTool };
+  return { tools, loading, error, refresh, addTool, updateTool, deleteTool, likeBeispiel };
 }

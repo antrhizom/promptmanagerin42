@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
         }
         const tool = parseFirestoreDoc(await toolRes.json());
         const beispiele = Array.isArray(tool.beispiele) ? (tool.beispiele as Record<string, unknown>[]) : [];
-        const neu: Record<string, unknown> = { titel: data.titel || '' };
+        const neu: Record<string, unknown> = {
+          id: `b_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          titel: data.titel || '',
+        };
         if (data.beschreibung) neu.beschreibung = data.beschreibung;
         if (data.link) neu.link = data.link;
         if (data.promptText) neu.promptText = data.promptText;

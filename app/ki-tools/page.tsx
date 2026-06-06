@@ -12,7 +12,7 @@ import { KI_TOOL_TYPEN, KI_TOOL_KATEGORIEN } from '@/lib/constants';
 
 export default function KiAssistentenPage() {
   const { isAdmin } = useAuthContext();
-  const { tools, loading, error, addTool, updateTool, deleteTool, likeTool } = useKiTools();
+  const { tools, loading, error, addTool, updateTool, deleteTool, likeBeispiel } = useKiTools();
 
   const [showForm, setShowForm] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
@@ -139,7 +139,7 @@ export default function KiAssistentenPage() {
               <KiToolCard
                 key={tool.id}
                 tool={tool}
-                onLike={(emoji) => likeTool(tool.id, emoji)}
+                onLikeBeispiel={(beispielId, emoji) => likeBeispiel(tool.id, beispielId, emoji)}
                 onEdit={isAdmin ? () => handleEdit(tool) : undefined}
                 onDelete={isAdmin ? () => handleDelete(tool) : undefined}
               />
