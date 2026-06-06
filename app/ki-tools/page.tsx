@@ -140,6 +140,7 @@ export default function KiAssistentenPage() {
                 key={tool.id}
                 tool={tool}
                 onLikeBeispiel={(beispielId, emoji) => likeBeispiel(tool.id, beispielId, emoji)}
+                onTagClick={(tag) => { setSearch(tag); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 onEdit={isAdmin ? () => handleEdit(tool) : undefined}
                 onDelete={isAdmin ? () => handleDelete(tool) : undefined}
               />

@@ -9,11 +9,12 @@ import styles from './KiToolCard.module.css';
 interface KiToolCardProps {
   tool: KiTool;
   onLikeBeispiel: (beispielId: string, emoji: string) => void;
+  onTagClick?: (tag: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function KiToolCard({ tool, onLikeBeispiel, onEdit, onDelete }: KiToolCardProps) {
+export function KiToolCard({ tool, onLikeBeispiel, onTagClick, onEdit, onDelete }: KiToolCardProps) {
   const beispiele = tool.beispiele || [];
   const likes = tool.beispielBewertungen || {};
 
@@ -37,7 +38,7 @@ export function KiToolCard({ tool, onLikeBeispiel, onEdit, onDelete }: KiToolCar
 
         {(tool.tags || []).length > 0 && (
           <div className={styles.badgeRow}>
-            {(tool.tags || []).map(t => <Badge key={t} variant="tag">#{t}</Badge>)}
+            {(tool.tags || []).map(t => <Badge key={t} variant="tag" onClick={onTagClick ? () => onTagClick(t) : undefined}>#{t}</Badge>)}
           </div>
         )}
 
@@ -68,7 +69,7 @@ export function KiToolCard({ tool, onLikeBeispiel, onEdit, onDelete }: KiToolCar
                   {b.beschreibung && <div className={styles.beispielText}>{b.beschreibung}</div>}
                   {(b.tags || []).length > 0 && (
                     <div className={styles.badgeRow} style={{ marginTop: '0.35rem' }}>
-                      {(b.tags || []).map(t => <Badge key={t} variant="tag">#{t}</Badge>)}
+                      {(b.tags || []).map(t => <Badge key={t} variant="tag" onClick={onTagClick ? () => onTagClick(t) : undefined}>#{t}</Badge>)}
                     </div>
                   )}
                   {b.autorEmail && <div className={styles.beispielAutor}>eingereicht von {b.autorEmail}</div>}
