@@ -7,7 +7,8 @@ import {
   OUTPUT_FORMATE,
   ANWENDUNGSFAELLE,
   ROLLEN,
-  BILDUNGSSTUFEN
+  BILDUNGSSTUFEN,
+  istKiAssistentenFall
 } from '@/lib/constants';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import styles from './PromptForm.module.css';
@@ -185,7 +186,8 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
       alert('Bitte mindestens eine Bildungsstufe auswahlen!');
       return;
     }
-    if (Object.keys(plattformenUndModelle).length === 0) {
+    // KI-Assistenten sind tool-übergreifend → für sie ist keine Plattform-Pflicht.
+    if (!istKiAssistentenFall(anwendungsfaelle) && Object.keys(plattformenUndModelle).length === 0) {
       alert('Bitte mindestens eine Plattform mit Modell auswahlen!');
       return;
     }

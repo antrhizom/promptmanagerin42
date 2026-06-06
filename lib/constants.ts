@@ -123,6 +123,10 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
   'Audio-Plattformen': {
     modelle: ['ElevenLabs.io', 'Sonstige'],
     funktionen: ['Text-zu-Sprache', 'Voice Cloning', 'Audio-Generierung']
+  },
+  'to-teach': {
+    modelle: ['to-teach'],
+    funktionen: ['Arbeitsblatt-Generierung', 'Quiz', 'Übungen', 'Differenzierung']
   }
 };
 
@@ -168,3 +172,9 @@ export const ANWENDUNGSFAELLE: { [key: string]: string[] } = {
   'Design': ['Internetseite', 'Objekte'],
   'Social Media Inhalte': ['Reel', 'Gif', 'Memes']
 };
+
+// KI-Assistenten sind tool-übergreifend definiert → für sie ist KEINE Plattform-Angabe nötig.
+// Erkennt sowohl die Hauptkategorie als auch ihre Unterkategorien (Gesprächsbot, Lern-Bot, …).
+export const KI_ASSISTENTEN_FAELLE = ['KI-Assistenten', ...ANWENDUNGSFAELLE['KI-Assistenten']];
+export const istKiAssistentenFall = (faelle: string[]) =>
+  faelle.some(fall => KI_ASSISTENTEN_FAELLE.includes(fall));
