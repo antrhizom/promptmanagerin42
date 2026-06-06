@@ -35,6 +35,25 @@ export default function KiAssistentenPage() {
     });
   }, [tools, search, filterTyp, filterKategorie]);
 
+  // Gruppierung in Unterregister nach Kategorie (sortiert nach KI_TOOL_KATEGORIEN, Rest ans Ende).
+  const gruppen = useMemo(() => {
+    const map = new Map<string, KiTool[]>();
+    for (const t of filtered) {
+      const key = t.kategorie || 'Weitere';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    const keys = Array.from(map.keys()).sort((a, b) => {
+      const ia = KI_TOOL_KATEGORIEN.indexOf(a);
+      const ib = KI_TOOL_KATEGORIEN.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    return keys.map(k => ({ kategorie: k, tools: map.get(k)! }));
+  }, [filtered]);
+
   const handleSubmit = async (data: Partial<KiTool>) => {
     if (editing) {
       await updateTool(editing.id, data);
@@ -141,16 +160,28 @@ export default function KiAssistentenPage() {
             {tools.length === 0 ? 'Noch keine KI-Tools hinterlegt.' : 'Keine Treffer für die aktuellen Filter.'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {filtered.map(tool => (
-              <KiToolCard
-                key={tool.id}
-                tool={tool}
-                onLike={(emoji) => likeTool(tool.id, emoji)}
-                onEdit={isAdmin ? () => handleEdit(tool) : undefined}
-                onDelete={isAdmin ? () => handleDelete(tool) : undefined}
-                onFilterClick={handleFilterClick}
-              />
+          <div style={{ display: 'grid', gap: '1.75rem' }}>
+            {gruppen.map(gruppe => (
+              <section key={gruppe.kategorie}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: 'var(--color-gray-800, #1f2937)', borderBottom: '1px solid var(--color-gray-200, #e5e7eb)', paddingBottom: '0.35rem' }}>
+                  {gruppe.kategorie}{' '}
+                  <span style={{ color: 'var(--color-gray-400, #9ca3af)', fontWeight: 500, fontSize: '0.85rem' }}>
+                    ({gruppe.tools.length})
+                  </span>
+                </h2>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {gruppe.tools.map(tool => (
+                    <KiToolCard
+                      key={tool.id}
+                      tool={tool}
+                      onLike={(emoji) => likeTool(tool.id, emoji)}
+                      onEdit={isAdmin ? () => handleEdit(tool) : undefined}
+                      onDelete={isAdmin ? () => handleDelete(tool) : undefined}
+                      onFilterClick={handleFilterClick}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
