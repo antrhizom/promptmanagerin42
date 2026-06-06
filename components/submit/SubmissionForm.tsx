@@ -100,7 +100,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
     }
   };
 
-  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'KI-Assistent / to-teach-Aufgabe vorschlagen';
+  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'KI-Tool / to-teach-Aufgabe vorschlagen';
 
   if (done) {
     return (

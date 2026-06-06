@@ -69,10 +69,10 @@ export default function KiAssistentenPage() {
     <PageLayout>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 style={{ fontSize: 'var(--text-2xl, 1.5rem)', fontWeight: 700, marginBottom: '0.25rem' }}>
-          KI-Assistenten &amp; Generatoren
+          KI-Tools &amp; Generatoren
         </h1>
         <p style={{ color: 'var(--color-gray-500, #6b7280)', marginBottom: '1.5rem' }}>
-          Eine kuratierte Sammlung nützlicher KI-Assistenten und -Generatoren (inkl. guter to-teach.ai-Aufgaben).
+          Eine kuratierte Sammlung nützlicher KI-Tools und -Generatoren (inkl. guter to-teach.ai-Aufgaben).
           Liken ist ohne Anmeldung möglich.
         </p>
 
