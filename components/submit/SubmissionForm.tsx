@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
-import { PLATTFORMEN_MIT_MODELLEN } from '@/lib/constants';
+import { PLATTFORMEN_MIT_MODELLEN, ABO_VARIANTEN } from '@/lib/constants';
 
 type SubmissionType = 'prompt' | 'kitool';
 
@@ -162,7 +162,10 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
             </div>
             <div style={field}>
               <label style={labelStyle}>Abo-Variante</label>
-              <input style={inputStyle} value={aboVariante} onChange={e => setAboVariante(e.target.value)} placeholder="Mit welchem Abo erstellt? z.B. Gratis, Plus, Pro" />
+              <select style={inputStyle} value={aboVariante} onChange={e => setAboVariante(e.target.value)}>
+                <option value="">– keine Angabe –</option>
+                {ABO_VARIANTEN.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
             </div>
             <div style={field}>
               <label style={labelStyle}>Tags (kommagetrennt)</label>

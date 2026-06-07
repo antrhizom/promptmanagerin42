@@ -12,6 +12,7 @@ const DEFAULT_FILTERS: FilterState = {
   filterTag: '',
   filterRolle: '',
   filterBildungsstufe: '',
+  filterAbo: '',
   sortierung: 'aktuell'
 };
 
@@ -98,7 +99,9 @@ export function useFilters(prompts: Prompt[]) {
         return values.some(v => v.includes(filterVal) || filterVal.includes(v));
       })();
 
-      return suchMatch && plattformMatch && outputMatch && anwendungMatch && tagMatch && rolleMatch && bildungsstufeMatch;
+      const aboMatch = !filters.filterAbo || (prompt.aboVariante || '') === filters.filterAbo;
+
+      return suchMatch && plattformMatch && outputMatch && anwendungMatch && tagMatch && rolleMatch && bildungsstufeMatch && aboMatch;
     });
   }, [prompts, filters]);
 

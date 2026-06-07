@@ -99,5 +99,6 @@ export interface FilterState {
   filterTag: string;
   filterRolle: string;
   filterBildungsstufe: string;
+  filterAbo: string;
   sortierung: SortOption;
 }

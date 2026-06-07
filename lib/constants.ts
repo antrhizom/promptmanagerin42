@@ -38,8 +38,8 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
 } = {
   'ChatGPT / OpenAI': {
     modelle: [
-      'GPT-5.2', 'GPT-5.1', 'GPT-4.1', 'GPT-4o',
-      'GPT-4o mini', 'o3', 'o3-mini', 'o3-pro'
+      'GPT-5.5 Instant', 'GPT-5.5 Thinking', 'GPT-5.5 Pro',
+      'GPT-5.4 mini', 'GPT-5.2', 'GPT-5'
     ],
     funktionen: [
       'Chat', 'Canvas', 'Custom GPTs', 'Web-Browsing',
@@ -48,8 +48,8 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
   },
   'Claude / Anthropic': {
     modelle: [
-      'Claude Opus 4.5', 'Claude Sonnet 4.5', 'Claude Opus 4',
-      'Claude Sonnet 4', 'Claude Haiku 4.5', 'Claude 4', 'Claude 4.5'
+      'Claude Opus 4.8', 'Claude Opus 4.7', 'Claude Opus 4.6',
+      'Claude Sonnet 4.6', 'Claude Sonnet 4.5', 'Claude Haiku 4.5'
     ],
     funktionen: [
       'Chat', 'Artifacts', 'Projects', 'Recherche',
@@ -58,8 +58,8 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
   },
   'Gemini / Google': {
     modelle: [
-      'Gemini 3 Pro', 'Gemini 3 Flash',
-      'Gemini 2.5 Pro', 'Gemini 2.5 Flash'
+      'Gemini 3.5 Pro', 'Gemini 3.5 Flash', 'Gemini 3.1 Pro',
+      'Gemini 3.1 Flash-Lite', 'Gemini 3 Pro', 'Gemini 3 Flash', 'Gemini 3 Deep Think'
     ],
     funktionen: [
       'Chat', 'Deep Research', 'Canvas', 'Bilder erstellen',
@@ -78,7 +78,7 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
     funktionen: ['Chat', 'Bildgenerierung', 'Textanalyse']
   },
   'Copilot / Microsoft': {
-    modelle: ['GPT-5', 'GPT-4.1', 'Claude Sonnet 4', 'Phi-4'],
+    modelle: ['GPT-5.5', 'GPT-5.2', 'Claude Sonnet 4.6', 'Phi-4'],
     funktionen: ['Chat', 'Web-Browsing', 'Bildgenerierung', 'Code-Assistance']
   },
   'Perplexity': {
@@ -139,6 +139,9 @@ export const PLATTFORMEN_MIT_MODELLEN: { [key: string]: string[] } = Object.entr
 }, {} as { [key: string]: string[] });
 
 export const EMOJIS = ['👍', '❤️', '🔥', '⭐', '💡'];
+
+// Abo-Variante, mit der ein Prompt erstellt wurde
+export const ABO_VARIANTEN = ['Gratis', 'Plus', 'Pro', 'Team', 'Bildung', 'Unbekannt'];
 
 // KI-Assistenten / KI-Generatoren (eigenes Register)
 export const KI_TOOL_TYPEN = ['Assistent', 'Generator'];

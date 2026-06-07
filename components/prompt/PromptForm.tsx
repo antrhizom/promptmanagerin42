@@ -8,6 +8,7 @@ import {
   ANWENDUNGSFAELLE,
   ROLLEN,
   BILDUNGSSTUFEN,
+  ABO_VARIANTEN,
   istKiAssistentenFall
 } from '@/lib/constants';
 import { useAuthContext } from '@/components/auth/AuthContext';
@@ -438,7 +439,10 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
       <div className={styles.sectionTags}>
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Abo-Variante</label>
-          <input className={styles.input} type="text" value={aboVariante} onChange={(e) => setAboVariante(e.target.value)} placeholder="Mit welchem Abo erstellt? z.B. Gratis, Plus, Pro, Team, Schullizenz" />
+          <select className={styles.input} value={aboVariante} onChange={(e) => setAboVariante(e.target.value)}>
+            <option value="">– keine Angabe –</option>
+            {ABO_VARIANTEN.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
         </div>
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Tags (kommagetrennt)</label>

@@ -6,7 +6,8 @@ import {
   OUTPUT_FORMATE,
   ANWENDUNGSFAELLE,
   ROLLEN,
-  BILDUNGSSTUFEN
+  BILDUNGSSTUFEN,
+  ABO_VARIANTEN
 } from '@/lib/constants';
 import styles from './FilterBar.module.css';
 
@@ -117,6 +118,17 @@ export function FilterBar({
           <option value="">Alle Bildungsstufen</option>
           {BILDUNGSSTUFEN.map(b => (
             <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+
+        <select
+          className={styles.select}
+          value={filters.filterAbo}
+          onChange={(e) => onFilterChange('filterAbo', e.target.value)}
+        >
+          <option value="">Alle Abo-Varianten</option>
+          {ABO_VARIANTEN.map(a => (
+            <option key={a} value={a}>{a}</option>
           ))}
         </select>
 
