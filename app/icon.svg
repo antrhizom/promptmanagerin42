@@ -6,8 +6,6 @@
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="7" fill="url(#bg)"/>
-  <!-- Sprechblase (Dialog / Prompt) -->
-  <path d="M8 8 H24 A3 3 0 0 1 27 11 V17 A3 3 0 0 1 24 20 H12.5 L9 23.5 V20 H8 A3 3 0 0 1 5 17 V11 A3 3 0 0 1 8 8 Z" fill="#ffffff"/>
-  <!-- Funke (KI / Idee) -->
-  <path d="M16 10.4 C16.42 12.7 17.3 13.58 19.6 14 C17.3 14.42 16.42 15.3 16 17.6 C15.58 15.3 14.7 14.42 12.4 14 C14.7 13.58 15.58 12.7 16 10.4 Z" fill="#0050b3"/>
+  <text x="16" y="23" text-anchor="middle" fill="#ffffff"
+        font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="800">P</text>
 </svg>
