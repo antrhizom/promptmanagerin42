@@ -62,11 +62,12 @@ export default function KiAssistentenPage() {
     <PageLayout>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 style={{ fontSize: 'var(--text-2xl, 1.5rem)', fontWeight: 700, marginBottom: '0.25rem' }}>
-          KI-Tools &amp; Generatoren
+          Gen Biblio
         </h1>
         <p style={{ color: 'var(--color-gray-500, #6b7280)', marginBottom: '1.5rem' }}>
-          Eine kuratierte Sammlung nützlicher KI-Tools und -Generatoren (inkl. guter to-teach.ai-Aufgaben).
-          Liken ist ohne Anmeldung möglich.
+          Eine Bibliothek von Ergebnissen aus <strong>Unterrichtsmaterial-Generatoren</strong> und
+          {' '}<strong>KI-Assistenten-Generatoren</strong> (z. B. to-teach, fobizz, GPTs, Claude Artifacts, Gemini).
+          Die Beispiele lassen sich <strong>kopieren oder remixen</strong>. Liken ist ohne Anmeldung möglich.
         </p>
 
         {showSubmit && (
@@ -79,7 +80,7 @@ export default function KiAssistentenPage() {
               onClick={() => { setEditing(null); setShowForm(true); }}
               style={{ padding: '0.6rem 1.25rem', background: 'var(--color-navy, #1e3a8a)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md, 8px)', fontWeight: 600, cursor: 'pointer' }}
             >
-              + Neues KI-Tool
+              + Neuer Generator
             </button>
           )}
           <button

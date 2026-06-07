@@ -76,7 +76,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       };
     } else {
-      if (!toolId) { setError('Bitte ein KI-Tool auswählen.'); return; }
+      if (!toolId) { setError('Bitte einen Generator auswählen.'); return; }
       if (!titel.trim()) { setError('Bitte einen Titel für das Beispiel angeben.'); return; }
       if (!exLink.trim() && !promptText.trim()) {
         setError('Bitte einen Link ODER einen Prompt-Text zum Beispiel angeben.'); return;
@@ -112,7 +112,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
     }
   };
 
-  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'Beispiel / Aufgabe für ein KI-Tool vorschlagen';
+  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'Beispiel / Aufgabe für einen Generator vorschlagen';
 
   if (done) {
     return (
@@ -175,13 +175,13 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         ) : (
           <>
             <div style={field}>
-              <label style={labelStyle}>KI-Tool *</label>
+              <label style={labelStyle}>Generator *</label>
               <select style={inputStyle} value={toolId} onChange={e => setToolId(e.target.value)}>
-                <option value="">– bitte ein Tool wählen –</option>
+                <option value="">– bitte einen Generator wählen –</option>
                 {tools.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
               <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '0.3rem 0 0' }}>
-                Dein Beispiel wird unter diesem Tool einsortiert.
+                Dein Beispiel wird unter diesem Generator einsortiert.
               </p>
             </div>
             <div style={field}>

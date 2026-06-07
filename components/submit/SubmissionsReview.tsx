@@ -72,7 +72,7 @@ export function SubmissionsReview() {
             const titel = s.type === 'comment'
               ? `Kommentar von ${(d.userName as string) || 'Anonym'}`
               : ((d.titel as string) || (d.name as string) || '(ohne Titel)');
-            const typLabel = s.type === 'prompt' ? 'Prompt' : s.type === 'comment' ? 'Kommentar' : 'KI-Tool-Beispiel';
+            const typLabel = s.type === 'prompt' ? 'Prompt' : s.type === 'comment' ? 'Kommentar' : 'Generator-Beispiel';
             return (
               <div key={s.id} style={{ border: '1px solid var(--color-gray-100,#f3f4f6)', borderRadius: 'var(--radius-md,8px)', padding: '0.75rem 0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -83,7 +83,7 @@ export function SubmissionsReview() {
                 </div>
                 {s.type === 'kitool' && d.toolName && (
                   <div style={{ fontSize: '0.8rem', color: 'var(--color-primary-blue,#0050b3)', fontWeight: 600, margin: '0.2rem 0' }}>
-                    → für Tool: {d.toolName as string}
+                    → für Generator: {d.toolName as string}
                   </div>
                 )}
                 {s.type === 'comment' && d.promptTitel && (

@@ -13,7 +13,7 @@ export function Footer() {
         </div>
         <div className={styles.links}>
           <Link href="/" className={styles.link}>Prompts</Link>
-          <Link href="/ki-tools" className={styles.link}>KI-Tools</Link>
+          <Link href="/ki-tools" className={styles.link}>Gen Biblio</Link>
           <Link href="/datenschutz" className={styles.link}>Datenschutz</Link>
           <Link href="/admin-login" className={styles.adminLink}>Admin-Bereich</Link>
         </div>
