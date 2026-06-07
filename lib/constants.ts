@@ -123,11 +123,9 @@ export const PLATTFORMEN_MIT_MODELLEN_UND_FUNKTIONEN: {
   'Audio-Plattformen': {
     modelle: ['ElevenLabs.io', 'Sonstige'],
     funktionen: ['Text-zu-Sprache', 'Voice Cloning', 'Audio-Generierung']
-  },
-  'to-teach': {
-    modelle: ['to-teach'],
-    funktionen: ['Arbeitsblatt-Generierung', 'Quiz', 'Übungen', 'Differenzierung']
   }
+  // Hinweis: to-teach ist ein KI-Tool/Generator (eigenes Register „KI-Tools"),
+  // KEINE Prompt-Plattform — daher hier bewusst nicht gelistet.
 };
 
 // Backward compatibility
