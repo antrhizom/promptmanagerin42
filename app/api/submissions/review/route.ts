@@ -24,6 +24,7 @@ function buildPromptFields(data: Record<string, unknown>, autor: string | null, 
     nutzungsanzahl: 0,
     erstelltVon: autor || 'Community',
   };
+  if (typeof data.aboVariante === 'string' && data.aboVariante.trim()) obj.aboVariante = data.aboVariante.trim();
   if (autor) obj.autorEmail = autor;
   const fields: Record<string, FirestoreValue> = {};
   for (const [k, v] of Object.entries(obj)) fields[k] = toFirestoreValue(v);

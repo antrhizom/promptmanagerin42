@@ -107,6 +107,9 @@ export function PromptCard({
             : <Badge variant="level" onClick={() => onFilterClick?.('bildungsstufe', prompt.bildungsstufe as string)}>{prompt.bildungsstufe}</Badge>
         )}
         <span className={styles.metaText}>{formatDate(prompt.erstelltAm)}</span>
+        {prompt.aboVariante && (
+          <span className={styles.metaText}>· Abo: {prompt.aboVariante}</span>
+        )}
         {prompt.autorEmail && (
           <span className={styles.metaText}>· eingereicht von {prompt.autorEmail}</span>
         )}

@@ -9,6 +9,7 @@ export interface Prompt {
   zusatzinstruktionen?: string;
   plattformenUndModelle: { [plattform: string]: string[] };
   plattformFunktionen?: { [plattform: string]: string[] };
+  aboVariante?: string;
   outputFormate: string[];
   anwendungsfaelle: string[];
   tags: string[];

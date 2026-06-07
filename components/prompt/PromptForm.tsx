@@ -32,6 +32,7 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
   const [outputFormate, setOutputFormate] = useState<string[]>([]);
   const [anwendungsfaelle, setAnwendungsfaelle] = useState<string[]>([]);
   const [tags, setTags] = useState('');
+  const [aboVariante, setAboVariante] = useState('');
   const [link1, setLink1] = useState('');
   const [link2, setLink2] = useState('');
   const [rollen, setRollen] = useState<string[]>([]);
@@ -53,6 +54,7 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
       setOutputFormate(editingPrompt.outputFormate || []);
       setAnwendungsfaelle(editingPrompt.anwendungsfaelle || []);
       setTags(editingPrompt.tags?.join(', ') || '');
+      setAboVariante(editingPrompt.aboVariante || '');
       setLink1(editingPrompt.link1 || '');
       setLink2(editingPrompt.link2 || '');
       // Backward compat: alte Prompts haben einen einzelnen String
@@ -212,6 +214,7 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
         outputFormate,
         anwendungsfaelle,
         tags: tags.split(',').map(t => t.trim()).filter(t => t),
+        ...(aboVariante.trim() && { aboVariante: aboVariante.trim() }),
         link1: link1.trim(),
         link2: link2.trim(),
         erstelltVon: editingPrompt?.erstelltVon || adminUser?.email || 'admin',
@@ -433,6 +436,10 @@ export function PromptForm({ editingPrompt, onSubmit, onCancel }: PromptFormProp
 
       {/* Tags & Links */}
       <div className={styles.sectionTags}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Abo-Variante</label>
+          <input className={styles.input} type="text" value={aboVariante} onChange={(e) => setAboVariante(e.target.value)} placeholder="Mit welchem Abo erstellt? z.B. Gratis, Plus, Pro, Team, Schullizenz" />
+        </div>
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Tags (kommagetrennt)</label>
           <input className={styles.input} type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="z.B. Mathematik, Grammatik, Kreativität" />

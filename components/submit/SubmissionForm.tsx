@@ -39,6 +39,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
   const [beschreibung, setBeschreibung] = useState('');
   const [promptText, setPromptText] = useState('');
   const [plattform, setPlattform] = useState('');
+  const [aboVariante, setAboVariante] = useState('');
   const [tags, setTags] = useState('');
 
   // KI-Tool-Beispiel-Felder
@@ -71,6 +72,7 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         beschreibung: beschreibung.trim(),
         promptText: promptText.trim(),
         plattform: plattform.trim(),
+        aboVariante: aboVariante.trim(),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       };
     } else {
@@ -157,6 +159,10 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
                 <option value="">– bitte wählen –</option>
                 {plattformen.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
+            </div>
+            <div style={field}>
+              <label style={labelStyle}>Abo-Variante</label>
+              <input style={inputStyle} value={aboVariante} onChange={e => setAboVariante(e.target.value)} placeholder="Mit welchem Abo erstellt? z.B. Gratis, Plus, Pro" />
             </div>
             <div style={field}>
               <label style={labelStyle}>Tags (kommagetrennt)</label>
