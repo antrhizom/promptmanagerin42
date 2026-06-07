@@ -6,62 +6,81 @@ import styles from './InfoButton.module.css';
 
 const GRUND_TIPPS = [
   'Rolle, Ziel, Zielgruppe und gewünschtes Format angeben.',
-  'Kontext und ein, zwei Beispiele mitgeben — zeigen statt nur beschreiben.',
   'Zielgruppe explizit adressieren: Stufe, Vorwissen, Sprache, Niveau.',
+  'Kontext und ein, zwei Beispiele mitgeben — zeigen statt nur beschreiben.',
   'Iterieren: die Antwort nachschärfen statt neu zu beginnen.',
-  'Kritisch prüfen: KI kann irren — Fakten und Quellen verifizieren.',
+  'KI kann irren — Fakten und Quellen verifizieren.',
   'Datenschutz: keine echten Personendaten oder vertrauliche Inhalte eingeben.',
 ];
+
+// KI als Review-Element: den eigenen Prompt zuerst kritisch prüfen lassen.
+const REVIEW_PROMPT =
+  'Prüfe diesen Prompt kritisch, bevor ich ihn einsetze: Ist er klar, zielgruppengerecht und ohne unnötige Hürden? Wo könnte er eher selektieren statt Lernräume zu öffnen? Schlage eine verbesserte Version vor.';
 
 interface Szenario {
   titel: string;
   idee: string;
   tipp: string;
   beispiel: string;
+  review: string;
 }
 
 const SZENARIEN: Szenario[] = [
   {
-    titel: 'Differenzieren: ein Inhalt, mehrere Niveaus',
-    idee: 'Statt einer einzigen Version denselben Inhalt auf mehreren Niveaustufen anbieten, damit alle einen Zugang finden.',
-    tipp: 'Niveaustufen, Zielgruppe und Umgang mit Fachbegriffen klar vorgeben.',
-    beispiel: 'Formuliere diesen Text in drei Niveaustufen (einfach / mittel / anspruchsvoll) für Lernende im 1. Lehrjahr. Behalte die Fachbegriffe, erkläre sie aber kurz.',
+    titel: 'Unterrichtsmaterial erstellen (nicht statisch)',
+    idee: 'Material, das sich anpassen lässt — mehrere Niveaus, Wahlaufgaben, offene Aufträge. So entstehen weniger Hürden und mehr Lernräume statt eines starren Arbeitsblatts.',
+    tipp: 'Niveaustufen, Wahlmöglichkeiten und offene Aufgaben verlangen — mit Lösungen.',
+    beispiel: 'Erstelle zum Thema [X] Material mit (a) Basis-, (b) Vertiefungs- und (c) offener Forscheraufgabe, je mit Lösung. Baue 2 Wahlaufgaben ein, damit Lernende selbst wählen können.',
+    review: 'Prüfe dein Material: Wo entstehen unnötige Hürden? Schlage eine zugänglichere Variante vor.',
   },
   {
-    titel: 'Mehrsprachigkeit / Deutsch als Zweitsprache',
-    idee: 'Schlüsselbegriffe zweisprachig und Glossare bereitstellen, damit sprachliche Hürden den Inhalt nicht verdecken.',
-    tipp: 'Erstsprache(n) nennen und um Glossar mit einfachen Beispielsätzen bitten.',
-    beispiel: 'Erstelle ein zweisprachiges Glossar (Deutsch ↔ …) zu diesem Text mit je einem einfachen Beispielsatz.',
+    titel: 'KI-Assistenten entwickeln',
+    idee: 'Einen Lern-Assistenten bauen, der begleitet statt vorgibt — Lernende fragen jederzeit nach. Das fördert Aktivität und individuelle Lernräume.',
+    tipp: 'Rolle, Tonfall, Grenzen (gibt Hinweise statt Lösungen) und Zielgruppe definieren.',
+    beispiel: 'Entwirf einen System-Prompt für einen Lern-Bot zu [Thema], der mit Fragen führt, Tipps statt Lösungen gibt, ermutigend bleibt und auf Niveau [Stufe] eingeht.',
+    review: 'Prüfe diesen System-Prompt: Wo sagt der Bot zu viel vor oder selektiert? Verbessere ihn.',
   },
   {
-    titel: 'Mehrere Darstellungsformen (UDL)',
-    idee: 'Denselben Inhalt zusätzlich als Zusammenfassung, Struktur/Mindmap und Alltagsbeispiel anbieten — verschiedene Zugänge für verschiedene Lernende.',
-    tipp: 'Mehrere Formate in einem Prompt anfordern.',
-    beispiel: 'Wandle dieses Kapitel um in: (a) eine 5-Satz-Zusammenfassung, (b) eine Stichwort-Mindmap, (c) ein Alltagsbeispiel aus dem Berufsalltag.',
+    titel: 'Korrekturhilfen (formatives Feedback)',
+    idee: 'Lernförderliches Feedback (Stärken + nächste Schritte) statt nur Note/Fehler — mehr formatives Feedback, weniger Selektion.',
+    tipp: 'Feedback-Kriterien vorgeben; keine Note, keine fertige Lösung — nur konkrete nächste Schritte.',
+    beispiel: 'Gib zu dieser Schülerantwort formatives Feedback: 2 Stärken, 2 konkrete nächste Schritte, in wohlwollendem Ton. Keine Note, keine fertige Lösung.',
+    review: 'Prüfe dein Feedback: Ist es ermutigend und konkret? Vermeidet es Bewertung/Selektion?',
   },
   {
-    titel: 'Barrierearm aufbereiten (klare Sprache)',
-    idee: 'Komplexe Texte in klare Sprache bringen und Bilder mit Alt-Texten zugänglich machen.',
-    tipp: 'Um kurze Sätze, aktive Form, erklärte Fachbegriffe und Alt-Text-Vorschläge bitten.',
-    beispiel: 'Überarbeite den Text in klarer Sprache (kurze Sätze, aktive Form, Fachbegriffe kurz erklärt) und schlage Alt-Texte für die Abbildungen vor.',
+    titel: 'Organisationshilfen für den Unterricht',
+    idee: 'Routinearbeiten (Planung, Abläufe, Infos) abnehmen lassen — so bleibt mehr Zeit für Begleitung und individuelle Lernräume.',
+    tipp: 'Kontext (Klasse, Zeit, Ziel) angeben und eine anpassbare Vorlage verlangen.',
+    beispiel: 'Erstelle einen Stundenablauf (90 Min.) zu [Thema] mit Lernzielen, Sozialformen, Material und Zeitangaben — als anpassbare Vorlage.',
+    review: 'Prüfe den Ablauf: Wo bleibt Raum für Eigenaktivität der Lernenden? Schlage Anpassungen vor.',
   },
   {
-    titel: 'Verständnis prüfen statt nur „durchnehmen"',
-    idee: 'Fragen und Selbsttests erzeugen, die das Verständnis sichtbar machen — inkl. typischer Fehlvorstellungen.',
-    tipp: 'Fragen mit Lösungen anfordern und nach häufigen Fehlvorstellungen fragen.',
+    titel: 'Daten in Excel visualisieren',
+    idee: 'Zusammenhänge sichtbar machen statt nur Zahlen abzuschreiben — niederschwelliger Zugang zu Daten, mehr Aktivität.',
+    tipp: 'Datenstruktur beschreiben; Schritt-für-Schritt-Anleitung + passenden Diagrammtyp verlangen.',
+    beispiel: 'Ich habe eine Tabelle mit [Spalten]. Erkläre Schritt für Schritt, wie ich in Excel ein passendes Diagramm erstelle, und schlage den geeignetsten Diagrammtyp vor.',
+    review: 'Prüfe deine Anleitung: Ist jeder Schritt auch ohne Excel-Vorwissen machbar?',
+  },
+  {
+    titel: 'Sprachliche Zugänglichkeit / Differenzierung',
+    idee: 'Inhalte in mehreren Niveaus und Sprachen — weniger sprachliche Hürden, mehr Teilhabe.',
+    tipp: 'Niveau, Sprache(n) und ein Glossar in einfacher Sprache vorgeben.',
+    beispiel: 'Formuliere diesen Text in 3 Niveaustufen und ergänze ein kurzes Glossar der Fachbegriffe in einfacher Sprache.',
+    review: 'Prüfe: Welche Begriffe sind noch Hürden? Vereinfache sie.',
+  },
+  {
+    titel: 'Verständnis sichtbar machen',
+    idee: 'Fragen und Selbsttests erzeugen, die Verständnis zeigen — inkl. typischer Fehlvorstellungen, statt nur Stoff „durchzunehmen".',
+    tipp: 'Fragen mit Lösungen verlangen und nach häufigen Fehlvorstellungen fragen.',
     beispiel: 'Erstelle 5 Verständnisfragen mit Lösungen zu diesem Text und nenne je eine häufige Fehlvorstellung dazu.',
+    review: 'Prüfe die Fragen: Sind sie fair, klar und ohne Stolperfallen formuliert?',
   },
   {
     titel: 'Lernende als Gestaltende',
-    idee: 'Lernende erstellen mit Prompts eigene Beispiele und Übungen zu ihren Interessen — das stärkt Selbstwirksamkeit statt blossem Konsum.',
+    idee: 'Lernende erstellen mit Prompts eigene Beispiele/Übungen zu ihren Interessen — stärkt Selbstwirksamkeit und Aktivität statt blossem Konsum.',
     tipp: 'Lernende geben Kontext/Interesse vor; die KI liefert, sie prüfen kritisch.',
     beispiel: 'Erkläre [Thema] anhand eines Beispiels aus [mein Beruf/Hobby] und gib mir 3 Übungsaufgaben mit Lösungen.',
-  },
-  {
-    titel: 'Feedback-Coach statt Lösungs-Automat',
-    idee: 'KI gibt formatives Feedback, das den nächsten Lernschritt zeigt — ohne die Arbeit abzunehmen.',
-    tipp: 'Stärken + konkrete nächste Schritte anfordern, ausdrücklich ohne fertige Lösung.',
-    beispiel: 'Gib Feedback zu meinem Text: 2 Stärken und 2 konkrete nächste Schritte. Schreibe den Text NICHT für mich um.',
+    review: 'Prüfe das Ergebnis gemeinsam: Stimmt es fachlich? Was würdest du anders formulieren?',
   },
 ];
 
@@ -92,7 +111,8 @@ export function InfoButton() {
               <div>
                 <h2 className={styles.headerTitle}>Mit Prompts Inhalte zugänglicher machen</h2>
                 <p className={styles.headerLead}>
-                  Nutze KI nicht nur, um Altes schneller zu erledigen — sondern um Lerninhalte für alle zugänglicher zu machen.
+                  Für einen Unterricht mit weniger Hürden und weniger Selektion — mehr Lernräume,
+                  Individualisierung, Aktivität und formatives Feedback. Nicht: Altes nur schneller erledigen.
                 </p>
               </div>
               <button className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Schließen">×</button>
@@ -104,7 +124,13 @@ export function InfoButton() {
                 {GRUND_TIPPS.map((t, i) => <li key={i}>{t}</li>)}
               </ul>
 
-              <div className={styles.sectionTitle}>Szenarien für Unterrichtsmaterial</div>
+              <div className={styles.sectionTitle}>KI als Review nutzen</div>
+              <div className={styles.szIdee} style={{ marginBottom: '0.5rem' }}>
+                Lass die KI deinen Prompt zuerst kritisch prüfen und verbessern, bevor du ihn einsetzt:
+              </div>
+              <div className={styles.szBeispiel}>{REVIEW_PROMPT}</div>
+
+              <div className={styles.sectionTitle}>Szenarien für den Unterricht</div>
               {SZENARIEN.map((s, i) => (
                 <details key={i} className={styles.szenario}>
                   <summary className={styles.szenarioSummary}>
@@ -116,6 +142,7 @@ export function InfoButton() {
                     <div className={styles.szTipp}>💡 {s.tipp}</div>
                     <div className={styles.szBeispielLabel}>Beispiel-Prompt</div>
                     <div className={styles.szBeispiel}>{s.beispiel}</div>
+                    <div className={styles.szTipp}>🔍 Review: {s.review}</div>
                   </div>
                 </details>
               ))}
