@@ -63,7 +63,7 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
       <Link href="/" className={styles.backLink}>&larr; Zurück zu den Prompts</Link>
 
       <h1 className={styles.title}>Dashboard</h1>
-      <p className={styles.subtitle}>Übersicht über alle Aktivitäten der Prompt Managerin</p>
+      <p className={styles.subtitle}>Übersicht über alle Aktivitäten der Promptmanagerin</p>
 
       {/* Offene Community-Einreichungen zur Freischaltung */}
       <SubmissionsReview />

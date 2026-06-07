@@ -4,7 +4,7 @@ import { AuthProvider } from '@/components/auth/AuthContext'
 import { VisitTracker } from '@/components/analytics/VisitTracker'
 
 export const metadata: Metadata = {
-  title: 'Prompt Managerin',
+  title: 'Promptmanagerin',
   description: 'Erprobte KI-Prompts fur Bildungszwecke entdecken und teilen',
 }
 

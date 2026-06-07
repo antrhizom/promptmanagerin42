@@ -16,7 +16,7 @@ export function Header({ onLoginClick, onCreateClick }: HeaderProps) {
     <header className={styles.header}>
       <div className={styles.container}>
         <Link href="/" className={styles.logo}>
-          Prompt Managerin
+          Promptmanagerin
         </Link>
 
         <nav className={styles.nav}>

@@ -59,7 +59,7 @@ export function UserLoginModal({ onClose }: UserLoginModalProps) {
     <Modal onClose={onClose}>
       {mode === 'choose' && (
         <>
-          <h2 className={styles.title}>Willkommen bei der Prompt Managerin</h2>
+          <h2 className={styles.title}>Willkommen bei der Promptmanagerin</h2>
           <p className={styles.subtitle}>
             Melde dich an, um Prompts zu bewerten und zu kommentieren. Dein Name wird bei deinen Kommentaren angezeigt.
           </p>
