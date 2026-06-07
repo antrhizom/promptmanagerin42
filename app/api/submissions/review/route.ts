@@ -78,7 +78,36 @@ export async function POST(request: NextRequest) {
       const data = (sub.data as Record<string, unknown>) || {};
       const autor = sub.emailOeffentlich ? (sub.autorEmail as string) : null;
 
-      if (type === 'kitool' && data.toolId) {
+      if (type === 'comment') {
+        // Moderierter Kommentar → an die kommentare-Liste des Prompts anhängen.
+        const promptId = String(data.promptId || '');
+        if (!promptId) {
+          return NextResponse.json({ error: 'Kommentar ohne Prompt-Bezug' }, { status: 400 });
+        }
+        const pRes = await fetch(`${FIRESTORE_URL}/prompts/${promptId}`, { headers: authHeaders(admin.idToken) });
+        if (!pRes.ok) {
+          return NextResponse.json({ error: 'Prompt nicht gefunden' }, { status: 404 });
+        }
+        const prompt = parseFirestoreDoc(await pRes.json());
+        const kommentare = Array.isArray(prompt.kommentare) ? (prompt.kommentare as Record<string, unknown>[]) : [];
+        const neu = {
+          id: `${Date.now()}_${Math.floor(Math.random() * 1e6)}`,
+          userCode: String(data.userCode || ''),
+          userName: String(data.userName || 'Anonym'),
+          text: String(data.text || ''),
+          timestamp: now,
+        };
+        const updated = [...kommentare, neu];
+        const patch = await fetch(`${FIRESTORE_URL}/prompts/${promptId}?updateMask.fieldPaths=kommentare`, {
+          method: 'PATCH',
+          headers: authHeaders(admin.idToken),
+          body: JSON.stringify({ fields: { kommentare: toFirestoreValue(updated) } }),
+        });
+        if (!patch.ok) {
+          console.error('[API/submissions/review] kommentar append error:', await patch.text());
+          return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
+        }
+      } else if (type === 'kitool' && data.toolId) {
         // KI-Tool-Einreichung = Beispiel für ein bestehendes Tool → an dessen beispiele anhängen.
         const toolId = String(data.toolId);
         const toolRes = await fetch(`${FIRESTORE_URL}/kiTools/${toolId}`, {

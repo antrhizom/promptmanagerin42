@@ -16,6 +16,7 @@ export function CommentSection({ kommentare, onAddComment, onLoginRequired }: Co
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async () => {
     if (!text.trim()) return;
@@ -23,6 +24,7 @@ export function CommentSection({ kommentare, onAddComment, onLoginRequired }: Co
     try {
       await onAddComment(text);
       setText('');
+      setSubmitted(true);
     } catch {
       alert('Fehler beim Hinzufugen des Kommentars.');
     } finally {
@@ -71,7 +73,11 @@ export function CommentSection({ kommentare, onAddComment, onLoginRequired }: Co
             </div>
           )}
 
-          {isAuthenticated ? (
+          {submitted ? (
+            <p className={styles.loginHint}>
+              Danke! Dein Kommentar erscheint nach einer kurzen Prüfung durch die Redaktion.
+            </p>
+          ) : isAuthenticated ? (
             <div className={styles.form}>
               <textarea
                 className={styles.textarea}

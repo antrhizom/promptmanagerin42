@@ -66,7 +66,7 @@ export interface KiTool {
 
 export interface Submission {
   id: string;
-  type: 'prompt' | 'kitool';
+  type: 'prompt' | 'kitool' | 'comment';
   data: Record<string, unknown>;
   autorEmail: string;
   emailOeffentlich: boolean;

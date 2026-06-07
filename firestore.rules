@@ -27,10 +27,12 @@ service cloud.firestore {
     match /prompts/{promptId} {
       allow read: if true;
       allow create: if isAdmin();
+      // Anonym nur: Kopier-Zähler +1 und Liken (bewertungen).
+      // Kommentare werden NICHT mehr direkt geändert (laufen über Moderation),
+      // daher kein kommentare-Schreibrecht für Besucher mehr.
       allow update: if isAdmin()
         || isUsageIncrement()
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bewertungen'])
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['kommentare']);
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bewertungen']);
       allow delete: if isAdmin();
     }
 
@@ -57,7 +59,7 @@ service cloud.firestore {
     match /submissions/{subId} {
       allow create: if
         request.resource.data.keys().hasOnly(['type', 'data', 'autorEmail', 'emailOeffentlich', 'status', 'createdAt']) &&
-        request.resource.data.type in ['prompt', 'kitool'] &&
+        request.resource.data.type in ['prompt', 'kitool', 'comment'] &&
         request.resource.data.status == 'pending' &&
         request.resource.data.data is map &&
         request.resource.data.autorEmail is string &&

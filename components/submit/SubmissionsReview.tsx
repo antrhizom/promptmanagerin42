@@ -69,19 +69,30 @@ export function SubmissionsReview() {
         <div style={{ display: 'grid', gap: '0.85rem' }}>
           {pending.map(s => {
             const d = (s.data || {}) as Record<string, string | string[]>;
-            const titel = (d.titel as string) || (d.name as string) || '(ohne Titel)';
+            const titel = s.type === 'comment'
+              ? `Kommentar von ${(d.userName as string) || 'Anonym'}`
+              : ((d.titel as string) || (d.name as string) || '(ohne Titel)');
+            const typLabel = s.type === 'prompt' ? 'Prompt' : s.type === 'comment' ? 'Kommentar' : 'KI-Tool-Beispiel';
             return (
               <div key={s.id} style={{ border: '1px solid var(--color-gray-100,#f3f4f6)', borderRadius: 'var(--radius-md,8px)', padding: '0.75rem 0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <strong>{titel}</strong>
                   <span style={{ fontSize: '0.75rem', background: 'var(--color-gray-100,#f3f4f6)', borderRadius: '999px', padding: '0.1rem 0.55rem' }}>
-                    {s.type === 'prompt' ? 'Prompt' : 'KI-Tool-Beispiel'}
+                    {typLabel}
                   </span>
                 </div>
                 {s.type === 'kitool' && d.toolName && (
                   <div style={{ fontSize: '0.8rem', color: 'var(--color-primary-blue,#0050b3)', fontWeight: 600, margin: '0.2rem 0' }}>
                     → für Tool: {d.toolName as string}
                   </div>
+                )}
+                {s.type === 'comment' && d.promptTitel && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-primary-blue,#0050b3)', fontWeight: 600, margin: '0.2rem 0' }}>
+                    → zu Prompt: {d.promptTitel as string}
+                  </div>
+                )}
+                {s.type === 'comment' && d.text && (
+                  <p style={{ margin: '0.35rem 0', color: 'var(--color-gray-800,#1f2937)', fontSize: '0.9rem', fontStyle: 'italic' }}>„{d.text as string}"</p>
                 )}
                 {d.beschreibung && <p style={{ margin: '0.35rem 0', color: 'var(--color-gray-600,#4b5563)', fontSize: '0.9rem' }}>{d.beschreibung as string}</p>}
                 {d.promptText && (
@@ -90,9 +101,11 @@ export function SubmissionsReview() {
                 {s.type === 'kitool' && d.link && (
                   <a href={d.link as string} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>↗ {d.link as string}</a>
                 )}
-                <div style={{ fontSize: '0.78rem', color: 'var(--color-gray-500,#6b7280)', marginTop: '0.4rem' }}>
-                  Autor-E-Mail: {s.autorEmail} · {s.emailOeffentlich ? 'wird öffentlich angezeigt' : 'bleibt intern'}
-                </div>
+                {s.autorEmail && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-gray-500,#6b7280)', marginTop: '0.4rem' }}>
+                    Autor-E-Mail: {s.autorEmail} · {s.emailOeffentlich ? 'wird öffentlich angezeigt' : 'bleibt intern'}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
                   <button disabled={busy === s.id} onClick={() => review(s.id, 'approve')} style={{ padding: '0.4rem 0.9rem', background: 'var(--color-success,#16a34a)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
                     {busy === s.id ? '...' : 'Freischalten'}
