@@ -8,7 +8,7 @@ import {
   FirestoreDoc,
 } from '@/lib/server/firestoreRest';
 import { verifyAdmin } from '@/lib/server/adminAuth';
-import { MAKE_WEBHOOK_URL } from '@/lib/constants';
+import { sendAdminEmail } from '@/lib/server/sendEmail';
 
 // POST: öffentlich — eine Einreichung anlegen (status immer 'pending').
 export async function POST(request: NextRequest) {
@@ -57,21 +57,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Einreichung fehlgeschlagen.' }, { status: 500 });
     }
 
-    // Best-effort Benachrichtigung an Admin (Make.com Webhook).
-    try {
-      await fetch(MAKE_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'new_submission',
-          submissionType: type,
-          titel: data.titel || data.name || '',
-          autorEmail,
-        }),
-      });
-    } catch {
-      // unkritisch
-    }
+    // Best-effort Benachrichtigung an Admin (Resend).
+    const titel = (data.titel as string) || (data.name as string) || '(ohne Titel)';
+    const label = type === 'prompt' ? 'Prompt' : 'KI-Tool-Beispiel';
+    const ziel = type === 'kitool' && data.toolName ? `\nFür Tool: ${data.toolName}` : '';
+    await sendAdminEmail(
+      `Neue Einreichung (${label}): ${titel}`,
+      `Es gibt eine neue Einreichung zur Freischaltung.\n\nTyp: ${label}${ziel}\nTitel: ${titel}\nAutor: ${autorEmail}\n\nZum Prüfen und Freischalten:\nhttps://promptmanagerin42.vercel.app/admin`
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

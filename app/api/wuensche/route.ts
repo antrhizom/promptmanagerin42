@@ -7,7 +7,7 @@ import {
   FirestoreDoc,
 } from '@/lib/server/firestoreRest';
 import { verifyAdmin } from '@/lib/server/adminAuth';
-import { MAKE_WEBHOOK_URL } from '@/lib/constants';
+import { sendAdminEmail } from '@/lib/server/sendEmail';
 
 // POST: öffentlich — einen Gestaltungs-Wunsch anlegen.
 export async function POST(request: NextRequest) {
@@ -35,14 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Senden fehlgeschlagen.' }, { status: 500 });
     }
 
-    // Best-effort Benachrichtigung an Admin.
-    try {
-      await fetch(MAKE_WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'wunsch', text: text.slice(0, 500), email }),
-      });
-    } catch { /* unkritisch */ }
+    // Best-effort Benachrichtigung an Admin (Resend).
+    await sendAdminEmail(
+      'Neuer Wunsch (Gestalte mit)',
+      `Ein neuer Gestaltungs-Wunsch ist eingegangen:\n\n${text}\n\nE-Mail: ${email || '(keine angegeben)'}\n\nAlle Wünsche im Dashboard:\nhttps://promptmanagerin42.vercel.app/admin`
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {
