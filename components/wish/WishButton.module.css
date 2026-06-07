@@ -1,0 +1,48 @@
+.wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 1.25rem;
+}
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  background: linear-gradient(110deg, var(--color-primary-blue, #0050b3), #2f80ed, var(--color-dark-blue, #003875));
+  background-size: 200% 100%;
+  box-shadow: 0 6px 18px rgba(0, 80, 179, 0.35);
+  animation: shimmer 4s ease-in-out infinite, floaty 3.2s ease-in-out infinite;
+}
+.btn:hover {
+  animation-play-state: paused;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 26px rgba(0, 80, 179, 0.45);
+}
+.sparkle { animation: wiggle 2.2s ease-in-out infinite; display: inline-block; }
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-12deg); }
+  75% { transform: rotate(12deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .sparkle { animation: none; }
+}

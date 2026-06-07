@@ -6,6 +6,7 @@ import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
+import { WuenscheReview } from '@/components/wish/WuenscheReview';
 import styles from './StatsDashboard.module.css';
 
 interface StatsDashboardProps {
@@ -67,6 +68,9 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
       {/* Offene Community-Einreichungen zur Freischaltung */}
       <SubmissionsReview />
+
+      {/* Gestaltungs-Wünsche */}
+      <WuenscheReview />
 
       {/* Besucher & Funktionen (anonymes Tracking) */}
       <div className={styles.sectionPlatform}>

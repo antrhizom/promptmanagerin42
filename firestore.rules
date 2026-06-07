@@ -68,6 +68,22 @@ service cloud.firestore {
     }
 
     // ============================================
+    // WÜNSCHE — „Gestalte mit": jeder darf einen Wunsch anlegen; Lesen nur Admin.
+    // ============================================
+    match /wuensche/{wunschId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['text', 'email', 'createdAt']) &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.text.size() <= 2000 &&
+        (!('email' in request.resource.data) ||
+          (request.resource.data.email is string && request.resource.data.email.size() <= 200)) &&
+        request.resource.data.createdAt is timestamp;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ============================================
     // ANALYTICS — anonyme Besucher dürfen NUR Events anlegen (append-only),
     // Lesen nur Admin, kein Update/Delete.
     // ============================================

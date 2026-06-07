@@ -12,6 +12,7 @@ import { SubmissionForm } from '@/components/submit/SubmissionForm';
 import { PromptForm } from '@/components/prompt/PromptForm';
 import { PromptList } from '@/components/prompt/PromptList';
 import { FilterBar } from '@/components/filter/FilterBar';
+import { WishButton } from '@/components/wish/WishButton';
 import { trackAction } from '@/lib/analytics';
 
 export default function Home() {
@@ -111,6 +112,8 @@ export default function Home() {
           onCancel={handleFormCancel}
         />
       )}
+
+      <WishButton />
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
         <button
