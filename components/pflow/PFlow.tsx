@@ -25,7 +25,7 @@ const ZIELE: Option<ZielKey>[] = [
 ];
 
 const ANSAETZE: Option<AnsatzKey>[] = [
-  { key: 'vorlage', label: 'Vorlage als Inspiration nutzen', desc: 'Bestehende Beispiele ansehen und übernehmen/anpassen.' },
+  { key: 'vorlage', label: 'Auf Vorlagen zugreifen', desc: 'Direkt bestehende Beispiele/Vorlagen nutzen — kopieren oder remixen (z. B. aus der Gen Biblio).' },
   { key: 'bestehendes', label: 'Bestehenden Ablauf anpassen', desc: 'Etwas, das ich schon habe, mit KI verbessern oder differenzieren.' },
   { key: 'neu', label: 'Etwas Neues ausprobieren', desc: 'Von Grund auf etwas Neues entwickeln.' },
   { key: 'selbstbauen', label: 'Selbst interaktiv gestalten (z. B. HTML)', desc: 'Eine eigene klickbare Seite oder Anwendung bauen lassen.' },
