@@ -16,10 +16,11 @@ export default function PFlowPage() {
         </h1>
         <p style={{ color: 'var(--color-gray-500, #6b7280)', marginBottom: '1.5rem', lineHeight: 1.55 }}>
           Nicht jede Idee braucht denselben Weg — und nicht alles ist ein KI-Assistent.
-          Dieses Flussdiagramm führt dich durch die Klärungsfragen: <strong>Was möchte ich mit KI
-          gestalten, welchen Prozess steuern, welchen Output von den Lernenden erreichen?</strong>{' '}
-          Danach: Was ist im Austausch zwischen KI und Mensch gefordert — und mit welchem Werkzeug?
-          Am Ende landest du beim passenden Ort: erprobte Prompts oder remixbare Beispiele in der Gen Biblio.
+          Dieses Flussdiagramm führt dich durch drei Klärungsfragen: <strong>Was möchte ich mit KI
+          gestalten (welcher Output für die Lernenden)?</strong> — <strong>Wie möchte ich vorgehen</strong>{' '}
+          (Vorlage nutzen, Bestehendes anpassen, Neues bauen, selbst interaktiv gestalten …)? — und{' '}
+          <strong>mit welchem Werkzeug</strong>? Am Ende landest du beim passenden Ort: erprobte Prompts
+          oder remixbare Beispiele in der Gen Biblio.
         </p>
         <PFlow />
       </div>
