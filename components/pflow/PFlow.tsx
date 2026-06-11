@@ -9,7 +9,7 @@ import styles from './PFlow.module.css';
 // Schritt 1: Was gestalten (konkreter Output)? → Schritt 2: Wie vorgehen (Herangehensweise)? → Schritt 3: Werkzeug.
 
 type ZielKey = 'arbeitsblatt' | 'lernkontrolle' | 'erklaerung' | 'interaktiv' | 'assistent' | 'feedback' | 'organisation';
-type AnsatzKey = 'vorlage' | 'bestehendes' | 'neu' | 'selbstbauen' | 'struktur';
+type AnsatzKey = 'generator' | 'vorlage' | 'bestehendes' | 'neu' | 'selbstbauen' | 'struktur';
 type WerkzeugKey = 'toteach' | 'fobizz' | 'gemini' | 'chatki';
 
 interface Option<K extends string> { key: K; label: string; desc: string }
@@ -25,7 +25,8 @@ const ZIELE: Option<ZielKey>[] = [
 ];
 
 const ANSAETZE: Option<AnsatzKey>[] = [
-  { key: 'vorlage', label: 'Auf Vorlagen zugreifen', desc: 'Direkt bestehende Beispiele/Vorlagen nutzen — kopieren oder remixen (z. B. aus der Gen Biblio).' },
+  { key: 'generator', label: 'Content-Generator nutzen', desc: 'Ein Tool wie to-teach übernimmt das Prompten: du gibst Thema/Eckdaten ein, es erzeugt den Inhalt — ganz ohne eigene Prompts.' },
+  { key: 'vorlage', label: 'Vorlage als Inspiration nutzen', desc: 'Bestehende Beispiele ansehen und übernehmen/anpassen.' },
   { key: 'bestehendes', label: 'Bestehenden Ablauf anpassen', desc: 'Etwas, das ich schon habe, mit KI verbessern oder differenzieren.' },
   { key: 'neu', label: 'Etwas Neues ausprobieren', desc: 'Von Grund auf etwas Neues entwickeln.' },
   { key: 'selbstbauen', label: 'Selbst interaktiv gestalten (z. B. HTML)', desc: 'Eine eigene klickbare Seite oder Anwendung bauen lassen.' },
@@ -61,6 +62,7 @@ const ZIEL_HINWEIS: Record<ZielKey, string> = {
 };
 
 const ANSATZ_TIPP: Record<AnsatzKey, string> = {
+  generator: 'Ein Content-Generator (z. B. to-teach) übernimmt das Prompten: du gibst Thema, Stufe und Aufgabentyp vor — das Tool erzeugt den Inhalt. Beispiele und Links findest du in der Gen Biblio.',
   vorlage: 'Starte in der Gen Biblio: nimm ein remixbares Beispiel und passe es an deine Klasse an.',
   bestehendes: 'Gib der KI dein bestehendes Material als Kontext und bitte um eine zugänglichere oder differenzierte Variante.',
   neu: 'Beschreibe Ziel, Zielgruppe und Output klar — und lass die KI deinen Prompt zuerst kritisch prüfen (Review), bevor du loslegst.',
