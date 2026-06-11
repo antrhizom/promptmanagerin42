@@ -1,0 +1,123 @@
+.wrap { max-width: 760px; margin: 0 auto; }
+
+/* Flussdiagramm: beantwortete Schritte als Knoten mit Pfeilen */
+.flow { display: flex; flex-direction: column; align-items: stretch; margin-bottom: 1.5rem; }
+
+.node {
+  border: 2px solid var(--color-primary-blue, #0050b3);
+  background: var(--color-light-blue, #e6f2ff);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+}
+.nodeFrage {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-dark-blue, #003875);
+  margin-bottom: 0.15rem;
+}
+.nodeAntwort {
+  font-weight: 700;
+  color: var(--color-gray-900, #111827);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.nodeEdit {
+  border: none;
+  background: none;
+  color: var(--color-primary-blue, #0050b3);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.arrow {
+  align-self: center;
+  color: var(--color-primary-blue, #0050b3);
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0.25rem 0;
+}
+
+/* Aktuelle Frage */
+.frageBox {
+  border: 2px dashed var(--color-primary-blue, #0050b3);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: var(--color-white, #fff);
+}
+.frageTitel { font-size: 1.05rem; font-weight: 700; color: var(--color-gray-900, #111827); margin: 0 0 0.25rem; }
+.frageHinweis { font-size: 0.85rem; color: var(--color-gray-500, #6b7280); margin: 0 0 0.85rem; }
+
+.optionen { display: grid; gap: 0.55rem; }
+.option {
+  text-align: left;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  background: var(--color-white, #fff);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+.option:hover {
+  border-color: var(--color-primary-blue, #0050b3);
+  background: var(--color-light-blue, #e6f2ff);
+  transform: translateX(3px);
+}
+.optionLabel { font-weight: 700; color: var(--color-gray-900, #111827); font-size: 0.95rem; }
+.optionDesc { font-size: 0.82rem; color: var(--color-gray-500, #6b7280); margin-top: 0.1rem; line-height: 1.4; }
+.empfohlen {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: var(--color-primary-blue, #0050b3);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.08rem 0.5rem;
+  vertical-align: middle;
+}
+
+/* Ergebnis */
+.ergebnis {
+  border: 2px solid var(--color-success, #16a34a);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: #f0fdf4;
+}
+.ergebnisTitel { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--color-gray-900, #111827); }
+.ergebnisText { font-size: 0.92rem; color: var(--color-gray-700, #374151); line-height: 1.55; margin: 0 0 0.6rem; }
+.ergebnisTipp {
+  font-size: 0.85rem;
+  background: var(--color-light-blue, #e6f2ff);
+  color: var(--color-dark-blue, #003875);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+.ergebnisLinks { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.linkBtn {
+  text-decoration: none;
+  background: var(--color-navy, #1e3a8a);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+.linkBtn:hover { opacity: 0.9; }
+
+.restart {
+  margin-top: 1rem;
+  border: 1px solid var(--color-gray-200, #e5e7eb);
+  background: var(--color-white, #fff);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+.restart:hover { background: var(--color-gray-50, #f9fafb); }

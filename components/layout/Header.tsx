@@ -22,6 +22,7 @@ export function Header({ onLoginClick, onCreateClick }: HeaderProps) {
         <nav className={styles.nav}>
           <Link href="/" className={styles.navLink}>Prompts</Link>
           <Link href="/ki-tools" className={styles.navLink}>Gen Biblio</Link>
+          <Link href="/p-flow" className={styles.navLink}>P-Flow</Link>
 
           {isAdmin && (
             <Link href="/admin" className={styles.navLink}>Dashboard</Link>
