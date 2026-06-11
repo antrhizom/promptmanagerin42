@@ -32,8 +32,11 @@ export async function POST(request: NextRequest) {
     if (type === 'prompt' && (!data.titel || !data.promptText)) {
       return NextResponse.json({ error: 'Titel und Prompt-Text sind erforderlich.' }, { status: 400 });
     }
-    if (type === 'kitool' && (!data.name || !data.link)) {
-      return NextResponse.json({ error: 'Name und Link sind erforderlich.' }, { status: 400 });
+    if (type === 'kitool' && (!data.toolId || !data.titel)) {
+      return NextResponse.json({ error: 'Bitte einen Generator wählen und einen Titel angeben.' }, { status: 400 });
+    }
+    if (type === 'kitool' && !data.link && !data.promptText) {
+      return NextResponse.json({ error: 'Bitte einen Link oder einen Prompt-Text angeben.' }, { status: 400 });
     }
 
     const fields = {
