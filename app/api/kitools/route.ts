@@ -12,7 +12,7 @@ export async function GET() {
     const url = `${FIRESTORE_URL}/kiTools?key=${FIRESTORE_API_KEY}&pageSize=300`;
     const response = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 30 },
+      cache: 'no-store',
     });
 
     if (!response.ok) {

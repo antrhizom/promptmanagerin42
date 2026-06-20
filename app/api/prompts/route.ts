@@ -55,7 +55,7 @@ export async function GET() {
 
     const response = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 30 } // Cache for 30 seconds
+      cache: 'no-store' // immer frisch, keine ISR-Writes
     });
 
     if (!response.ok) {
@@ -63,7 +63,7 @@ export async function GET() {
       const fallbackUrl = `${FIRESTORE_URL}/prompts?key=${apiKey}&pageSize=200`;
       const fallbackResponse = await fetch(fallbackUrl, {
         headers: { 'Content-Type': 'application/json' },
-        next: { revalidate: 30 }
+        cache: 'no-store'
       });
 
       if (!fallbackResponse.ok) {
