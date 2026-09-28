@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { trackVisit } from '@/lib/analytics';
 
-// Zählt einmal pro Session einen anonymen Besuch. Rendert nichts.
+// Zählt jeden Seitenaufruf anonym mit dem Pfad der Seite. Rendert nichts.
 export function VisitTracker() {
+  const pathname = usePathname();
   useEffect(() => {
-    trackVisit();
-  }, []);
+    trackVisit(pathname || '/');
+  }, [pathname]);
   return null;
 }

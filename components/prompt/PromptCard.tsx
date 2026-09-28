@@ -49,6 +49,7 @@ export function PromptCard({
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(prompt.promptText);
+    trackAction('prompt-kopiert');
     onCopy();
   };
 
@@ -61,7 +62,7 @@ export function PromptCard({
     a.download = `${prompt.titel.replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    trackAction('download');
+    trackAction('prompt-heruntergeladen');
     onCopy();
   };
 
@@ -171,12 +172,12 @@ export function PromptCard({
       {(prompt.link1 || prompt.link2) && (
         <div className={styles.linksSection}>
           {prompt.link1 && (
-            <a href={prompt.link1} target="_blank" rel="noopener noreferrer" className={styles.linkItem}>
+            <a href={prompt.link1} target="_blank" rel="noopener noreferrer" className={styles.linkItem} onClick={() => trackAction('prompt-link')}>
               ↗ Link 1
             </a>
           )}
           {prompt.link2 && (
-            <a href={prompt.link2} target="_blank" rel="noopener noreferrer" className={styles.linkItem}>
+            <a href={prompt.link2} target="_blank" rel="noopener noreferrer" className={styles.linkItem} onClick={() => trackAction('prompt-link')}>
               ↗ Link 2
             </a>
           )}
@@ -208,7 +209,7 @@ export function PromptCard({
           {prompt.endproduktLink && (
             <div className={styles.processItem}>
               <div className={styles.processLabel}>Endprodukt</div>
-              <a href={prompt.endproduktLink} target="_blank" rel="noopener noreferrer" className={styles.processLink}>
+              <a href={prompt.endproduktLink} target="_blank" rel="noopener noreferrer" className={styles.processLink} onClick={() => trackAction('endprodukt-link')}>
                 ↗ {prompt.endproduktLink}
               </a>
             </div>
@@ -221,7 +222,7 @@ export function PromptCard({
         <div className={styles.reactions}>
           {/* Liken ist ohne Login möglich */}
           {EMOJIS.map(emoji => (
-            <button key={emoji} className={styles.reactionBtn} onClick={() => onRate(emoji)} title="Liken">
+            <button key={emoji} className={styles.reactionBtn} onClick={() => { trackAction('prompt-geliked'); onRate(emoji); }} title="Liken">
               {emoji}
               {(prompt.bewertungen?.[emoji] || 0) > 0 && (
                 <span className={styles.reactionCount}>{prompt.bewertungen[emoji]}</span>

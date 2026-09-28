@@ -23,7 +23,46 @@ interface AnalyticsSummary {
   functions: { name: string; plattform: string; count: number }[];
   functionsByPlattform: { plattform: string; count: number }[];
   actions: { name: string; count: number }[];
+  pages?: { name: string; count: number; visitors: number }[];
   timeline?: TimelinePoint[];
+}
+
+// Klarnamen fuer die Seitenpfade.
+const PAGE_LABELS: Record<string, string> = {
+  '/': 'Startseite (Prompts)',
+  '/ki-tools': 'Gen Biblio',
+  '/p-flow': 'P-Flow',
+  '/datenschutz': 'Datenschutz',
+  '/admin': 'Dashboard',
+  '/admin-login': 'Admin-Login',
+  unbekannt: 'Ohne Seitenangabe (vor der Umstellung)',
+};
+
+// Klarnamen fuer die getrackten Klick-Aktionen.
+const ACTION_LABELS: Record<string, string> = {
+  'prompt-kopiert': 'Prompt kopiert',
+  'prompt-heruntergeladen': 'Prompt heruntergeladen',
+  'prompt-geliked': 'Prompt geliked',
+  'prompt-link': 'Link im Prompt geoeffnet',
+  'endprodukt-link': 'Endprodukt geoeffnet',
+  download: 'Prompt heruntergeladen (alt)',
+  tag: 'Hashtag angeklickt',
+  'open-tipps': 'Tipps-Fenster geoeffnet',
+  'open-kitool': 'Gen-Biblio-Tool geoeffnet',
+  'open-kitool-beispiel': 'Beispiel eines Tools geoeffnet',
+  'open-wunsch': 'Wunsch-Formular geoeffnet',
+  'wunsch-gesendet': 'Wunsch abgeschickt',
+};
+
+function actionLabel(name: string): string {
+  if (ACTION_LABELS[name]) return ACTION_LABELS[name];
+  if (name.startsWith('filter:')) return `Filter gesetzt: ${name.slice(7)}`;
+  if (name.startsWith('pflow:')) return `P-Flow: ${name.slice(6).replace(/:/g, ' / ')}`;
+  return name;
+}
+
+function pageLabel(name: string): string {
+  return PAGE_LABELS[name] || name;
 }
 
 function getRankClass(index: number) {
@@ -76,7 +115,14 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
       {/* Besucher & Funktionen (anonymes Tracking) */}
       <div className={styles.sectionPlatform}>
-        <h2 className={styles.sectionTitle}>Besucher &amp; Funktionen (ohne Login)</h2>
+        <h2 className={styles.sectionTitle}>Besucher &amp; Klicks (ohne Login)</h2>
+        <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
+          Anonym gezaehlt: Besucher sind Browser-Sitzungen, Seitenaufrufe zaehlen die
+          besuchten Seiten, Funktions-Badges sind die Klicks auf die Badges
+          &laquo;Funktionen&raquo; in einem Prompt (z.&nbsp;B. Web-Browsing, Bildanalyse),
+          und Klick-Aktionen sind alle uebrigen Interaktionen wie Kopieren, Filtern oder
+          Hashtags.
+        </p>
         <div className={styles.overviewGrid}>
           <div className={styles.overviewCardBlue}>
             <div className={styles.overviewValue}>{analytics?.visitors ?? '–'}</div>
@@ -88,21 +134,39 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
           </div>
           <div className={styles.overviewCardAmber}>
             <div className={styles.overviewValue}>{analytics?.totalFunctionClicks ?? '–'}</div>
-            <div className={styles.overviewLabel}>KI-Funktionen angewählt</div>
+            <div className={styles.overviewLabel}>Funktions-Badges geklickt</div>
           </div>
           <div className={styles.overviewCardPurple}>
             <div className={styles.overviewValue}>{analytics?.totalActions ?? '–'}</div>
-            <div className={styles.overviewLabel}>Seiten-Aktionen</div>
+            <div className={styles.overviewLabel}>Klick-Aktionen</div>
           </div>
         </div>
 
         {/* Zeitlicher Verlauf der Nutzung */}
         <UsageTimeline timeline={analytics?.timeline} />
 
+        {analytics && (analytics.pages?.length || 0) > 0 && (
+          <>
+            <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
+              Aufgerufene Seiten
+            </h3>
+            <div className={styles.statGrid}>
+              {(analytics.pages || []).map(p => (
+                <div key={p.name} className={styles.statItem}>
+                  <span className={styles.statItemName}>
+                    {pageLabel(p.name)} · {p.visitors} Besucher
+                  </span>
+                  <span className={styles.statItemCount}>{p.count}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {analytics && analytics.functions.length > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
-              Angewählte KI-Plattform-Funktionen
+              Angeklickte Funktions-Badges in Prompts
             </h3>
             <div className={styles.statGrid}>
               {analytics.functions.map(f => (
@@ -120,12 +184,12 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
         {analytics && analytics.actions.length > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
-              Seiten-Aktionen
+              Klick-Aktionen
             </h3>
             <div className={styles.statGrid}>
               {analytics.actions.map(a => (
                 <div key={a.name} className={styles.statItem}>
-                  <span className={styles.statItemName}>{a.name}</span>
+                  <span className={styles.statItemName}>{actionLabel(a.name)}</span>
                   <span className={styles.statItemCount}>{a.count}</span>
                 </div>
               ))}

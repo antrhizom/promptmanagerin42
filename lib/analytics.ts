@@ -7,6 +7,9 @@
 const SESSION_KEY = 'pm_session_id';
 const VISIT_KEY = 'pm_visit_tracked';
 
+// Obergrenze je Session und Seite, damit wiederholtes Wechseln nicht doppelt zählt.
+const MAX_VIEWS_PER_PAGE = 3;
+
 export function getSessionId(): string {
   if (typeof window === 'undefined') return '';
   let id = sessionStorage.getItem(SESSION_KEY);
@@ -33,12 +36,17 @@ async function send(payload: Record<string, unknown>) {
   }
 }
 
-// Einmal pro Session zählen, dass die Seite (ohne Login) genutzt wird.
-export function trackVisit() {
+// Seitenaufruf zählen (mit Pfad, z. B. "/" oder "/ki-tools"). Pro Session und
+// Seite wird höchstens MAX_VIEWS_PER_PAGE mal gezählt, damit schnelles Hin- und
+// Herwechseln die Statistik nicht aufbläht.
+export function trackVisit(page?: string) {
   if (typeof window === 'undefined') return;
-  if (sessionStorage.getItem(VISIT_KEY)) return;
-  sessionStorage.setItem(VISIT_KEY, '1');
-  void send({ type: 'visit' });
+  const name = page || window.location.pathname || '/';
+  const key = `${VISIT_KEY}:${name}`;
+  const seen = Number(sessionStorage.getItem(key) || '0');
+  if (seen >= MAX_VIEWS_PER_PAGE) return;
+  sessionStorage.setItem(key, String(seen + 1));
+  void send({ type: 'visit', name });
 }
 
 // Eine angewählte KI-Plattform-Funktion (z. B. "Web-Browsing").

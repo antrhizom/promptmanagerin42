@@ -26,8 +26,8 @@ const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
 
 const SERIES = [
   { key: 'visits', label: 'Seitenaufrufe', color: '#3b82f6' },
-  { key: 'functions', label: 'KI-Funktionen', color: '#d97706' },
-  { key: 'actions', label: 'Seiten-Aktionen', color: '#7c3aed' },
+  { key: 'functions', label: 'Funktions-Badges', color: '#d97706' },
+  { key: 'actions', label: 'Klick-Aktionen', color: '#7c3aed' },
 ] as const;
 
 // Ab dieser Anzahl Tage wird auf Wochen verdichtet, sonst werden die Balken zu dünn.
@@ -241,7 +241,7 @@ export function UsageTimeline({ timeline }: UsageTimelineProps) {
                 fill="transparent"
               >
                 <title>
-                  {`${b.fullLabel}\n${b.visitors} Besucher\n${b.visits} Seitenaufrufe\n${b.functions} KI-Funktionen\n${b.actions} Seiten-Aktionen`}
+                  {`${b.fullLabel}\n${b.visitors} Besucher\n${b.visits} Seitenaufrufe\n${b.functions} Funktions-Badges\n${b.actions} Klick-Aktionen`}
                 </title>
               </rect>
               {i % labelEvery === 0 && (
