@@ -397,3 +397,8 @@
 .overviewCardTeal::before {
   background: linear-gradient(90deg, #0d9488, #2dd4bf);
 }
+
+/* Alles mit Hover-Erklaerung bekommt den Fragezeichen-Cursor. */
+.dashboard div[title] {
+  cursor: help;
+}

@@ -54,6 +54,33 @@ const ACTION_LABELS: Record<string, string> = {
   'wunsch-gesendet': 'Wunsch abgeschickt',
 };
 
+// Erklaerungen, die beim Hovern als Tooltip erscheinen.
+const ACTION_HINTS: Record<string, string> = {
+  'prompt-kopiert': 'Jemand hat den Prompt-Text ueber den Knopf «Kopieren» in die Zwischenablage genommen. Bester Hinweis darauf, dass ein Prompt wirklich eingesetzt wurde.',
+  'prompt-heruntergeladen': 'Der Prompt wurde ueber «Download» als Textdatei gespeichert.',
+  'prompt-geliked': 'Auf ein Emoji unter einem Prompt geklickt. Moeglich ohne Login.',
+  'prompt-link': 'Einer der beiden weiterfuehrenden Links in einer Prompt-Karte wurde geoeffnet.',
+  'endprodukt-link': 'Der Link zum Endprodukt in der Prozessbeschreibung wurde geoeffnet.',
+  download: 'Alte Zaehlweise des Downloads, vor der Umbenennung erfasst.',
+  tag: 'Auf einen Hashtag geklickt, wodurch die Liste nach diesem Hashtag gefiltert wurde.',
+  'open-tipps': 'Der schwebende Knopf mit Prompting-Tipps und Unterrichts-Szenarien wurde geoeffnet.',
+  'open-kitool': 'Ein Werkzeug in der Gen Biblio wurde angeklickt und in einem neuen Tab geoeffnet.',
+  'open-kitool-beispiel': 'Ein Beispiel innerhalb eines Werkzeugs der Gen Biblio wurde geoeffnet.',
+  'open-wunsch': 'Das Formular «Gestalte mit» wurde geoeffnet.',
+  'wunsch-gesendet': 'Ein Gestaltungs-Wunsch wurde tatsaechlich abgeschickt.',
+};
+
+function actionHint(name: string): string {
+  if (ACTION_HINTS[name]) return ACTION_HINTS[name];
+  if (name.startsWith('filter:')) {
+    return `Ein Filter wurde gesetzt, hier nach ${name.slice(7)}. Gezaehlt wird jeder Klick auf ein Badge oder eine Auswahl im Filterbereich.`;
+  }
+  if (name.startsWith('pflow:')) {
+    return 'Ein Schritt im P-Flow wurde gewaehlt. Die Kette zeigt, welchen Weg die Person durch das Flussdiagramm genommen hat.';
+  }
+  return 'Klick-Aktion auf der Seite.';
+}
+
 function actionLabel(name: string): string {
   if (ACTION_LABELS[name]) return ACTION_LABELS[name];
   if (name.startsWith('filter:')) return `Filter gesetzt: ${name.slice(7)}`;
@@ -124,19 +151,31 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
           Hashtags.
         </p>
         <div className={styles.overviewGrid}>
-          <div className={styles.overviewCardBlue}>
+          <div
+            className={styles.overviewCardBlue}
+            title="Anzahl Browser-Sitzungen. Jede Sitzung bekommt eine zufaellige, anonyme Nummer, die beim Schliessen des Tabs verfaellt. Dieselbe Person an zwei Tagen zaehlt also zweimal, mehrere Seiten in derselben Sitzung nur einmal."
+          >
             <div className={styles.overviewValue}>{analytics?.visitors ?? '–'}</div>
             <div className={styles.overviewLabel}>Besucher (Sessions)</div>
           </div>
-          <div className={styles.overviewCardGreen}>
+          <div
+            className={styles.overviewCardGreen}
+            title="Aufgerufene Seiten insgesamt, also Startseite, Gen Biblio, P-Flow und Datenschutz zusammen. Pro Sitzung und Seite wird hoechstens dreimal gezaehlt, damit Hin- und Herwechseln die Zahl nicht aufblaeht."
+          >
             <div className={styles.overviewValue}>{analytics?.visitEvents ?? '–'}</div>
             <div className={styles.overviewLabel}>Seitenaufrufe</div>
           </div>
-          <div className={styles.overviewCardAmber}>
+          <div
+            className={styles.overviewCardAmber}
+            title="Klicks auf die Badges unter «Funktionen» in einer Prompt-Karte, zum Beispiel Web-Browsing oder Bildanalyse. Diese Badges loesen nichts aus, sie zeigen nur, welche Faehigkeit der Prompt braucht. Es ist NICHT die Nutzung einer KI."
+          >
             <div className={styles.overviewValue}>{analytics?.totalFunctionClicks ?? '–'}</div>
             <div className={styles.overviewLabel}>Funktions-Badges geklickt</div>
           </div>
-          <div className={styles.overviewCardPurple}>
+          <div
+            className={styles.overviewCardPurple}
+            title="Alle uebrigen Interaktionen zusammen: Prompt kopieren, herunterladen, liken, Links oeffnen, filtern, Hashtags anklicken, Tipps oeffnen, P-Flow durchlaufen."
+          >
             <div className={styles.overviewValue}>{analytics?.totalActions ?? '–'}</div>
             <div className={styles.overviewLabel}>Klick-Aktionen</div>
           </div>
@@ -152,7 +191,11 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
             </h3>
             <div className={styles.statGrid}>
               {(analytics.pages || []).map(p => (
-                <div key={p.name} className={styles.statItem}>
+                <div
+                  key={p.name}
+                  className={styles.statItem}
+                  title={`${pageLabel(p.name)} (${p.name}): ${p.count} Aufrufe von ${p.visitors} verschiedenen Sitzungen. Liegen beide Zahlen nahe beieinander, schauen die Leute einmal vorbei; ist die linke deutlich hoeher, kehren sie innerhalb der Sitzung zurueck.`}
+                >
                   <span className={styles.statItemName}>
                     {pageLabel(p.name)} · {p.visitors} Besucher
                   </span>
@@ -170,7 +213,11 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
             </h3>
             <div className={styles.statGrid}>
               {analytics.functions.map(f => (
-                <div key={`${f.plattform}-${f.name}`} className={styles.statItem}>
+                <div
+                  key={`${f.plattform}-${f.name}`}
+                  className={styles.statItem}
+                  title={`Das Badge «${f.name}»${f.plattform ? ` der Plattform ${f.plattform}` : ''} wurde ${f.count}x in einer Prompt-Karte angeklickt. Das Badge beschreibt, welche Funktion der Prompt voraussetzt.`}
+                >
                   <span className={styles.statItemName}>
                     {f.name}{f.plattform ? ` · ${f.plattform}` : ''}
                   </span>
@@ -188,7 +235,7 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
             </h3>
             <div className={styles.statGrid}>
               {analytics.actions.map(a => (
-                <div key={a.name} className={styles.statItem}>
+                <div key={a.name} className={styles.statItem} title={`${actionHint(a.name)} (interner Name: ${a.name})`}>
                   <span className={styles.statItemName}>{actionLabel(a.name)}</span>
                   <span className={styles.statItemCount}>{a.count}</span>
                 </div>

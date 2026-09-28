@@ -25,9 +25,24 @@ const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
 ];
 
 const SERIES = [
-  { key: 'visits', label: 'Seitenaufrufe', color: '#3b82f6' },
-  { key: 'functions', label: 'Funktions-Badges', color: '#d97706' },
-  { key: 'actions', label: 'Klick-Aktionen', color: '#7c3aed' },
+  {
+    key: 'visits',
+    label: 'Seitenaufrufe',
+    color: '#3b82f6',
+    hint: 'Aufgerufene Seiten an diesem Tag, hoechstens dreimal je Sitzung und Seite.',
+  },
+  {
+    key: 'functions',
+    label: 'Funktions-Badges',
+    color: '#d97706',
+    hint: 'Klicks auf die Badges unter «Funktionen» in einer Prompt-Karte, z. B. Web-Browsing. Keine KI-Nutzung.',
+  },
+  {
+    key: 'actions',
+    label: 'Klick-Aktionen',
+    color: '#7c3aed',
+    hint: 'Alle uebrigen Interaktionen: kopieren, herunterladen, liken, filtern, Hashtags, Tipps, P-Flow.',
+  },
 ] as const;
 
 // Ab dieser Anzahl Tage wird auf Wochen verdichtet, sonst werden die Balken zu dünn.
@@ -184,12 +199,19 @@ export function UsageTimeline({ timeline }: UsageTimelineProps) {
 
       <div className={styles.legend}>
         {SERIES.map(s => (
-          <span key={s.key} className={styles.legendItem}>
+          <span key={s.key} className={styles.legendItem} title={s.hint}>
             <span className={styles.legendDot} style={{ background: s.color }} />
             {s.label}
           </span>
         ))}
-        {weekly && <span className={styles.legendNote}>pro Woche zusammengefasst</span>}
+        {weekly && (
+          <span
+            className={styles.legendNote}
+            title="Bei langen Zeitraeumen werden je sieben Tage zu einem Balken zusammengefasst, sonst werden die Balken zu duenn."
+          >
+            pro Woche zusammengefasst
+          </span>
+        )}
       </div>
 
       <div className={styles.chartWrap}>
