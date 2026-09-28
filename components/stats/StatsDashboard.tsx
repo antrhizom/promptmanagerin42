@@ -7,6 +7,7 @@ import { calculateStats } from '@/lib/utils/statsCalculations';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
 import { WuenscheReview } from '@/components/wish/WuenscheReview';
+import { UsageTimeline, TimelinePoint } from './UsageTimeline';
 import styles from './StatsDashboard.module.css';
 
 interface StatsDashboardProps {
@@ -22,6 +23,7 @@ interface AnalyticsSummary {
   functions: { name: string; plattform: string; count: number }[];
   functionsByPlattform: { plattform: string; count: number }[];
   actions: { name: string; count: number }[];
+  timeline?: TimelinePoint[];
 }
 
 function getRankClass(index: number) {
@@ -93,6 +95,9 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
             <div className={styles.overviewLabel}>Seiten-Aktionen</div>
           </div>
         </div>
+
+        {/* Zeitlicher Verlauf der Nutzung */}
+        <UsageTimeline timeline={analytics?.timeline} />
 
         {analytics && analytics.functions.length > 0 && (
           <>

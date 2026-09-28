@@ -10,6 +10,35 @@ import { verifyAdmin } from '@/lib/server/adminAuth';
 
 const ALLOWED_TYPES = ['visit', 'function', 'action'];
 
+// Tages-Schlüssel (YYYY-MM-DD) in Schweizer Zeit, damit der Verlauf zur
+// gelebten Nutzung passt und nicht an der UTC-Grenze umspringt.
+const DAY_FORMATTER = new Intl.DateTimeFormat('sv-SE', {
+  timeZone: 'Europe/Zurich',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function toDayKey(iso: unknown): string | null {
+  if (typeof iso !== 'string' || !iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return DAY_FORMATTER.format(date);
+}
+
+// Lückenlose Tagesreihe vom ersten bis zum letzten Event, damit stille Tage
+// im Diagramm als Null sichtbar bleiben.
+function fillDayGaps(first: string, last: string): string[] {
+  const result: string[] = [];
+  const cursor = new Date(`${first}T12:00:00Z`);
+  const end = new Date(`${last}T12:00:00Z`);
+  while (cursor <= end && result.length < 1000) {
+    result.push(DAY_FORMATTER.format(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return result;
+}
+
 // POST: öffentlich — legt ein Analytics-Event an (append-only, via API-Key).
 export async function POST(request: NextRequest) {
   try {
@@ -90,6 +119,24 @@ export async function GET(request: NextRequest) {
     const plattformCounts = new Map<string, number>();
     const actionCounts = new Map<string, number>();
 
+    // Zeitlicher Verlauf: pro Tag ein Eimer mit den drei Event-Typen und den
+    // an diesem Tag gesehenen Sessions.
+    interface DayBucket {
+      visits: number;
+      functions: number;
+      actions: number;
+      sessions: Set<string>;
+    }
+    const dayBuckets = new Map<string, DayBucket>();
+    const bucketFor = (day: string): DayBucket => {
+      let bucket = dayBuckets.get(day);
+      if (!bucket) {
+        bucket = { visits: 0, functions: 0, actions: 0, sessions: new Set<string>() };
+        dayBuckets.set(day, bucket);
+      }
+      return bucket;
+    };
+
     for (const ev of docs) {
       const type = ev.type as string;
       const session = ev.session as string | undefined;
@@ -97,6 +144,15 @@ export async function GET(request: NextRequest) {
       const plattform = (ev.plattform as string | undefined) || '';
 
       if (session) sessions.add(session);
+
+      const day = toDayKey(ev.ts);
+      if (day) {
+        const bucket = bucketFor(day);
+        if (session) bucket.sessions.add(session);
+        if (type === 'visit') bucket.visits++;
+        else if (type === 'function') bucket.functions++;
+        else if (type === 'action') bucket.actions++;
+      }
 
       if (type === 'visit') {
         visitEvents++;
@@ -119,6 +175,21 @@ export async function GET(request: NextRequest) {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
+    const usedDays = Array.from(dayBuckets.keys()).sort();
+    const allDays = usedDays.length > 0
+      ? fillDayGaps(usedDays[0], usedDays[usedDays.length - 1])
+      : [];
+    const timeline = allDays.map(date => {
+      const bucket = dayBuckets.get(date);
+      return {
+        date,
+        visitors: bucket ? bucket.sessions.size : 0,
+        visits: bucket ? bucket.visits : 0,
+        functions: bucket ? bucket.functions : 0,
+        actions: bucket ? bucket.actions : 0,
+      };
+    });
+
     return NextResponse.json({
       visitors: sessions.size,
       visitEvents,
@@ -127,6 +198,7 @@ export async function GET(request: NextRequest) {
       functions,
       functionsByPlattform,
       actions,
+      timeline,
     });
   } catch (err) {
     console.error('[API/analytics] GET server error:', err);
