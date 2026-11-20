@@ -135,6 +135,18 @@ export const PLATTFORMEN_MIT_MODELLEN: { [key: string]: string[] } = Object.entr
 
 export const EMOJIS = ['👍', '❤️', '🔥', '⭐', '💡'];
 
+// Zeitraeume der Dashboard-Auswertung. Gemeinsame Quelle fuer den zeitlichen Verlauf
+// (Client) und die Seitenaufrufe je Zeitraum (Server), damit beide dasselbe Fenster
+// zeigen: die letzten N Tage der Tagesreihe bzw. alles.
+export const DASHBOARD_ZEITRAEUME = [
+  { key: '14', label: '14 Tage', days: 14 },
+  { key: '30', label: '30 Tage', days: 30 },
+  { key: '90', label: '90 Tage', days: 90 },
+  { key: 'alle', label: 'Alle', days: null },
+] as const;
+
+export type ZeitraumKey = (typeof DASHBOARD_ZEITRAEUME)[number]['key'];
+
 // Abo-Variante, mit der ein Prompt erstellt wurde
 export const ABO_VARIANTEN = ['Gratis', 'Plus', 'Pro', 'Team', 'Bildung', 'Unbekannt'];
 

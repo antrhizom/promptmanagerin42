@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { DASHBOARD_ZEITRAEUME, ZeitraumKey } from '@/lib/constants';
 import styles from './UsageTimeline.module.css';
 
 export interface TimelinePoint {
@@ -13,16 +14,10 @@ export interface TimelinePoint {
 
 interface UsageTimelineProps {
   timeline: TimelinePoint[] | undefined;
+  // Zeitraum wird im Dashboard gehalten, damit auch die Seitenaufrufe darauf reagieren.
+  range: ZeitraumKey;
+  onRangeChange: (range: ZeitraumKey) => void;
 }
-
-type RangeKey = '14' | '30' | '90' | 'alle';
-
-const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
-  { key: '14', label: '14 Tage', days: 14 },
-  { key: '30', label: '30 Tage', days: 30 },
-  { key: '90', label: '90 Tage', days: 90 },
-  { key: 'alle', label: 'Alle', days: null },
-];
 
 const SERIES = [
   {
@@ -102,12 +97,10 @@ function toBuckets(points: TimelinePoint[], weekly: boolean): Bucket[] {
   return weeks;
 }
 
-export function UsageTimeline({ timeline }: UsageTimelineProps) {
-  const [range, setRange] = useState<RangeKey>('30');
-
+export function UsageTimeline({ timeline, range, onRangeChange }: UsageTimelineProps) {
   const { buckets, weekly, summary } = useMemo(() => {
     const points = timeline || [];
-    const days = RANGES.find(r => r.key === range)?.days ?? null;
+    const days = DASHBOARD_ZEITRAEUME.find(r => r.key === range)?.days ?? null;
     const selected = days ? points.slice(-days) : points;
     const isWeekly = selected.length > WEEK_THRESHOLD;
 
@@ -184,12 +177,12 @@ export function UsageTimeline({ timeline }: UsageTimelineProps) {
       <div className={styles.header}>
         <h3 className={styles.heading}>Zeitlicher Verlauf</h3>
         <div className={styles.rangeButtons}>
-          {RANGES.map(r => (
+          {DASHBOARD_ZEITRAEUME.map(r => (
             <button
               key={r.key}
               type="button"
               className={r.key === range ? styles.rangeButtonActive : styles.rangeButton}
-              onClick={() => setRange(r.key)}
+              onClick={() => onRangeChange(r.key)}
             >
               {r.label}
             </button>

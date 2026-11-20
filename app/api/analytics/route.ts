@@ -7,8 +7,38 @@ import {
   FirestoreDoc,
 } from '@/lib/server/firestoreRest';
 import { verifyAdmin } from '@/lib/server/adminAuth';
+import { DASHBOARD_ZEITRAEUME } from '@/lib/constants';
 
 const ALLOWED_TYPES = ['visit', 'function', 'action'];
+
+interface VisitRecord {
+  page: string;
+  day: string | null;
+  session?: string;
+}
+
+interface PageStat {
+  name: string;
+  count: number;
+  visitors: number;
+}
+
+// Seitenaufrufe je Seite: Anzahl Aufrufe und verschiedene Sitzungen.
+function aggregatePages(records: VisitRecord[]): PageStat[] {
+  const counts = new Map<string, number>();
+  const sessions = new Map<string, Set<string>>();
+  for (const r of records) {
+    counts.set(r.page, (counts.get(r.page) || 0) + 1);
+    if (r.session) {
+      const set = sessions.get(r.page) || new Set<string>();
+      set.add(r.session);
+      sessions.set(r.page, set);
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({ name, count, visitors: sessions.get(name)?.size || 0 }))
+    .sort((a, b) => b.count - a.count);
+}
 
 // Tages-Schlüssel (YYYY-MM-DD) in Schweizer Zeit, damit der Verlauf zur
 // gelebten Nutzung passt und nicht an der UTC-Grenze umspringt.
@@ -118,8 +148,7 @@ export async function GET(request: NextRequest) {
     const functionCounts = new Map<string, { name: string; plattform: string; count: number }>();
     const plattformCounts = new Map<string, number>();
     const actionCounts = new Map<string, number>();
-    const pageCounts = new Map<string, number>();
-    const pageSessions = new Map<string, Set<string>>();
+    const visitRecords: VisitRecord[] = [];
 
     // Zeitlicher Verlauf: pro Tag ein Eimer mit den drei Event-Typen und den
     // an diesem Tag gesehenen Sessions.
@@ -159,13 +188,7 @@ export async function GET(request: NextRequest) {
       if (type === 'visit') {
         visitEvents++;
         // Aeltere Events wurden ohne Pfad geschrieben; die laufen unter "unbekannt".
-        const page = name || 'unbekannt';
-        pageCounts.set(page, (pageCounts.get(page) || 0) + 1);
-        if (session) {
-          const set = pageSessions.get(page) || new Set<string>();
-          set.add(session);
-          pageSessions.set(page, set);
-        }
+        visitRecords.push({ page: name || 'unbekannt', day, session });
       } else if (type === 'function') {
         const key = `${plattform}||${name}`;
         const entry = functionCounts.get(key) || { name, plattform, count: 0 };
@@ -180,13 +203,6 @@ export async function GET(request: NextRequest) {
     const functions = Array.from(functionCounts.values()).sort((a, b) => b.count - a.count);
     const functionsByPlattform = Array.from(plattformCounts.entries())
       .map(([plattform, count]) => ({ plattform, count }))
-      .sort((a, b) => b.count - a.count);
-    const pages = Array.from(pageCounts.entries())
-      .map(([name, count]) => ({
-        name,
-        count,
-        visitors: pageSessions.get(name)?.size || 0,
-      }))
       .sort((a, b) => b.count - a.count);
     const actions = Array.from(actionCounts.entries())
       .map(([name, count]) => ({ name, count }))
@@ -207,6 +223,18 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Seitenaufrufe je Zeitraum, mit demselben Fenster wie der Verlauf im Dashboard:
+    // die letzten N Tage der lueckenlosen Tagesreihe. Besucher werden pro Zeitraum
+    // eindeutig gezaehlt (nicht aus Tageswerten summiert).
+    const pages = aggregatePages(visitRecords);
+    const pagesByRange: Record<string, PageStat[]> = {};
+    for (const z of DASHBOARD_ZEITRAEUME) {
+      const cutoff = z.days !== null && allDays.length > z.days ? allDays[allDays.length - z.days] : null;
+      pagesByRange[z.key] = cutoff
+        ? aggregatePages(visitRecords.filter(r => r.day !== null && r.day >= cutoff))
+        : pages;
+    }
+
     return NextResponse.json({
       visitors: sessions.size,
       visitEvents,
@@ -216,6 +244,7 @@ export async function GET(request: NextRequest) {
       functionsByPlattform,
       actions,
       pages,
+      pagesByRange,
       timeline,
     });
   } catch (err) {

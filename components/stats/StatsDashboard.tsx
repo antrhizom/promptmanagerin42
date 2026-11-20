@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
+import { DASHBOARD_ZEITRAEUME, ZeitraumKey } from '@/lib/constants';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
 import { WuenscheReview } from '@/components/wish/WuenscheReview';
@@ -15,6 +16,12 @@ interface StatsDashboardProps {
   loading: boolean;
 }
 
+interface PageStat {
+  name: string;
+  count: number;
+  visitors: number;
+}
+
 interface AnalyticsSummary {
   visitors: number;
   visitEvents: number;
@@ -23,7 +30,9 @@ interface AnalyticsSummary {
   functions: { name: string; plattform: string; count: number }[];
   functionsByPlattform: { plattform: string; count: number }[];
   actions: { name: string; count: number }[];
-  pages?: { name: string; count: number; visitors: number }[];
+  pages?: PageStat[];
+  // Seitenaufrufe je Zeitraum (Schluessel wie DASHBOARD_ZEITRAEUME).
+  pagesByRange?: Partial<Record<ZeitraumKey, PageStat[]>>;
   timeline?: TimelinePoint[];
 }
 
@@ -102,6 +111,7 @@ function getRankClass(index: number) {
 export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
   const { getIdToken } = useAuthContext();
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [zeitraum, setZeitraum] = useState<ZeitraumKey>('30');
 
   // Besucher- & Funktions-Auswertung (Admin-only, mit ID-Token).
   useEffect(() => {
@@ -122,6 +132,12 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
   }, [getIdToken]);
 
   const stats = useMemo(() => calculateStats(prompts, {}), [prompts]);
+
+  // Seitenaufrufe passend zum gewaehlten Zeitraum. Faellt auf die Gesamtzahlen zurueck,
+  // falls der Server (noch) keine Aufteilung liefert.
+  const pagesImZeitraum = analytics?.pagesByRange?.[zeitraum] ?? analytics?.pages ?? [];
+  const zeitraumTage = DASHBOARD_ZEITRAEUME.find(z => z.key === zeitraum)?.days ?? null;
+  const zeitraumText = zeitraumTage ? `letzte ${zeitraumTage} Tage` : 'gesamter Zeitraum';
 
   if (loading) {
     return <div className={styles.loading}>Dashboard wird geladen...</div>;
@@ -182,15 +198,27 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
         </div>
 
         {/* Zeitlicher Verlauf der Nutzung */}
-        <UsageTimeline timeline={analytics?.timeline} />
+        <UsageTimeline
+          timeline={analytics?.timeline}
+          range={zeitraum}
+          onRangeChange={setZeitraum}
+        />
 
         {analytics && (analytics.pages?.length || 0) > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
               Aufgerufene Seiten
+              <span style={{ fontWeight: 400, color: 'var(--color-gray-500, #6b7280)' }}>
+                {' '}· {zeitraumText}
+              </span>
             </h3>
+            {pagesImZeitraum.length === 0 && (
+              <p className={styles.subtitle} style={{ marginTop: 0 }}>
+                Im gewählten Zeitraum wurden keine Seiten aufgerufen.
+              </p>
+            )}
             <div className={styles.statGrid}>
-              {(analytics.pages || []).map(p => (
+              {pagesImZeitraum.map(p => (
                 <div
                   key={p.name}
                   className={styles.statItem}
