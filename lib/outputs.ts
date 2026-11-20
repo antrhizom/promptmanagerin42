@@ -42,6 +42,23 @@ export interface OutputEintrag {
   lizenz?: string;
   // Eigener Startprompt zum Anpassen; ohne Angabe wird ein allgemeiner erzeugt.
   anpassPrompt?: string;
+  // Nur bei Community-Outputs (aus der Datenbank, von der Redaktion freigeschaltet):
+  id?: string;
+  quelle?: 'redaktion' | 'community';
+  downloadUrl?: string; // Standard: datei
+  groesse?: number;
+}
+
+// Aus einem Titel einen Dateinamen-tauglichen Kurznamen machen.
+export function kurzname(titel: string): string {
+  return (
+    titel
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'output'
+  );
 }
 
 export const OUTPUTS: OutputEintrag[] = [

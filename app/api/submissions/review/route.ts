@@ -139,6 +139,38 @@ export async function POST(request: NextRequest) {
           console.error('[API/submissions/review] beispiel append error:', errText);
           return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
         }
+      } else if (type === 'output') {
+        // Output-Einreichung → eigenes Dokument in «outputs» (oeffentlich lesbar).
+        // Die Felder wurden beim Einreichen bereits geprueft und bereinigt.
+        const html = typeof data.html === 'string' ? data.html : '';
+        if (!html) {
+          return NextResponse.json({ error: 'Einreichung enthält keine HTML-Datei' }, { status: 400 });
+        }
+        const obj: Record<string, unknown> = {
+          typ: data.typ || 'HTML',
+          titel: data.titel || '',
+          beschreibung: data.beschreibung || '',
+          erstelltMit: data.erstelltMit || '',
+          dateiname: data.dateiname || '',
+          tags: Array.isArray(data.tags) ? data.tags : [],
+          groesse: typeof data.groesse === 'number' ? data.groesse : Buffer.byteLength(html, 'utf8'),
+          html,
+          submissionId,
+        };
+        if (autor) obj.autorEmail = autor;
+        const fields: Record<string, FirestoreValue> = {};
+        for (const [k, v] of Object.entries(obj)) fields[k] = toFirestoreValue(v);
+        fields.erstelltAm = { timestampValue: now };
+
+        const createRes = await fetch(`${FIRESTORE_URL}/outputs`, {
+          method: 'POST',
+          headers: authHeaders(admin.idToken),
+          body: JSON.stringify({ fields }),
+        });
+        if (!createRes.ok) {
+          console.error('[API/submissions/review] output publish error:', await createRes.text());
+          return NextResponse.json({ error: 'Veröffentlichen fehlgeschlagen' }, { status: 500 });
+        }
       } else {
         // Prompt-Einreichung (oder Legacy-Tool ohne toolId) → neues Dokument anlegen.
         const target = type === 'prompt' ? 'prompts' : 'kiTools';

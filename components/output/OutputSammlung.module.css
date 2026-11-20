@@ -4,6 +4,21 @@
   gap: var(--space-8, 2rem);
 }
 
+/* Einreichen */
+.einreichen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  background: var(--color-white, #fff);
+  border: 1px dashed var(--color-gray-300, #d4d4d4);
+  border-radius: var(--radius-lg, 0.75rem);
+  padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+}
+.einreichen strong { font-size: var(--text-base, 1rem); color: var(--color-gray-900, #171717); }
+.einreichen p { margin-top: 0.15rem; font-size: var(--text-sm, 0.875rem); color: var(--color-gray-500, #737373); }
+
 /* Gruppe je Output-Typ */
 .gruppe {
   display: flex;
@@ -60,6 +75,16 @@
 .typBadge {
   background: var(--color-format-light, #f0fdfa);
   color: var(--color-format, #0d9488);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.05rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.communityBadge {
+  background: var(--color-function-light, #f5f3ff);
+  color: var(--color-function, #7c3aed);
   border: 1px solid currentColor;
   border-radius: 999px;
   padding: 0.05rem 0.55rem;
@@ -138,6 +163,18 @@
   margin-left: auto;
 }
 .btnText:hover { text-decoration: underline; }
+.btnLoeschen {
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid var(--color-error, #dc2626);
+  background: var(--color-white, #fff);
+  color: var(--color-error, #dc2626);
+  cursor: pointer;
+}
+.btnLoeschen:hover { background: var(--color-error-light, #fee2e2); }
+.btnLoeschen:focus-visible { outline: 2px solid var(--color-error, #dc2626); outline-offset: 2px; }
 .btnKlein {
   font-size: 0.8rem;
   font-weight: 600;

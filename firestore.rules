@@ -59,7 +59,7 @@ service cloud.firestore {
     match /submissions/{subId} {
       allow create: if
         request.resource.data.keys().hasOnly(['type', 'data', 'autorEmail', 'emailOeffentlich', 'status', 'createdAt']) &&
-        request.resource.data.type in ['prompt', 'kitool', 'comment'] &&
+        request.resource.data.type in ['prompt', 'kitool', 'comment', 'output'] &&
         request.resource.data.status == 'pending' &&
         request.resource.data.data is map &&
         request.resource.data.autorEmail is string &&
@@ -67,6 +67,16 @@ service cloud.firestore {
         request.resource.data.emailOeffentlich is bool &&
         request.resource.data.createdAt is timestamp;
       allow read, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // OUTPUTS — freigeschaltete Community-Outputs (Register «Output»).
+    // Öffentlich lesbar; anlegen nur beim Freischalten durch den Admin.
+    // Das HTML wird nur abgeschottet (CSP-Sandbox) ausgeliefert.
+    // ============================================
+    match /outputs/{outputId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // ============================================

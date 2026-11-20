@@ -72,6 +72,7 @@ const ACTION_LABELS: Record<string, string> = {
   'output-code-angezeigt': 'Output-Code angezeigt',
   'output-code-kopiert': 'Output-Code kopiert',
   'output-prompt-kopiert': 'Anpass-Prompt kopiert',
+  'open-output-einreichen': 'Formular «Output vorschlagen» geoeffnet',
 };
 
 // Erklaerungen, die beim Hovern als Tooltip erscheinen.
@@ -94,6 +95,7 @@ const ACTION_HINTS: Record<string, string> = {
   'output-code-angezeigt': 'Der Quellcode eines Outputs wurde aufgeklappt.',
   'output-code-kopiert': 'Der Quellcode eines Outputs wurde in die Zwischenablage kopiert.',
   'output-prompt-kopiert': 'Der Startprompt zum Anpassen eines Outputs per Chat-KI oder KI-Agent wurde kopiert.',
+  'open-output-einreichen': 'Im Register Output wurde das Formular zum Hochladen eines eigenen Outputs geoeffnet.',
 };
 
 function actionHint(name: string): string {

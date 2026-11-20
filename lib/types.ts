@@ -64,9 +64,24 @@ export interface KiTool {
   deletedAt?: TimestampLike;
 }
 
+// Von der Community eingereichter und freigeschalteter Output (Register «Output»).
+// Die Datei selbst (html) wird nur ueber /api/outputs/[id] ausgeliefert.
+export interface CommunityOutput {
+  id: string;
+  typ: string; // z. B. 'HTML'
+  titel: string;
+  beschreibung?: string;
+  tags?: string[];
+  erstelltMit?: string;
+  dateiname?: string;
+  groesse?: number; // Bytes
+  autorEmail?: string;
+  erstelltAm?: TimestampLike;
+}
+
 export interface Submission {
   id: string;
-  type: 'prompt' | 'kitool' | 'comment';
+  type: 'prompt' | 'kitool' | 'comment' | 'output';
   data: Record<string, unknown>;
   autorEmail: string;
   emailOeffentlich: boolean;

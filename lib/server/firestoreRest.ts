@@ -4,7 +4,13 @@
 export const FIRESTORE_PROJECT =
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'prompt-managerin';
 export const FIRESTORE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-export const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents`;
+// Lokal testen: Mit FIRESTORE_EMULATOR_HOST (Firebase-Konvention, z. B. "localhost:8080")
+// laufen alle Zugriffe gegen einen Emulator statt gegen die echte Datenbank.
+// Im Betrieb ist die Variable nicht gesetzt.
+const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST
+  ? `http://${process.env.FIRESTORE_EMULATOR_HOST}`
+  : 'https://firestore.googleapis.com';
+export const FIRESTORE_URL = `${FIRESTORE_HOST}/v1/projects/${FIRESTORE_PROJECT}/databases/(default)/documents`;
 
 export interface FirestoreValue {
   stringValue?: string;

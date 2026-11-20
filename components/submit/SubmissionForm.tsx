@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Modal } from '@/components/common/Modal';
-import { PLATTFORMEN_MIT_MODELLEN, ABO_VARIANTEN } from '@/lib/constants';
+import { PLATTFORMEN_MIT_MODELLEN, ABO_VARIANTEN, OUTPUT_MAX_BYTES } from '@/lib/constants';
 
-type SubmissionType = 'prompt' | 'kitool';
+type SubmissionType = 'prompt' | 'kitool' | 'output';
+
+interface OutputDatei {
+  name: string;
+  html: string;
+  groesse: number;
+}
+
+const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 interface SubmissionFormProps {
   type: SubmissionType;
@@ -48,7 +56,32 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
   const [exLink, setExLink] = useState('');
   const [exTags, setExTags] = useState('');
 
+  // Output-Felder (HTML-Datei)
+  const [datei, setDatei] = useState<OutputDatei | null>(null);
+  const [erstelltMit, setErstelltMit] = useState('');
+
   const plattformen = Object.keys(PLATTFORMEN_MIT_MODELLEN);
+
+  const waehleDatei = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError('');
+    setDatei(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!/\.html?$/i.test(file.name)) {
+      setError('Bitte eine HTML-Datei (.html) wählen.');
+      return;
+    }
+    if (file.size > OUTPUT_MAX_BYTES) {
+      setError(`Die Datei ist zu gross (${kb(file.size)}). Erlaubt sind höchstens ${kb(OUTPUT_MAX_BYTES)}.`);
+      return;
+    }
+    const html = await file.text();
+    setDatei({ name: file.name, html, groesse: file.size });
+    if (!titel.trim()) {
+      const ausHtml = html.match(/<title[^>]*>([^<]{1,150})<\/title>/i)?.[1]?.trim();
+      if (ausHtml) setTitel(ausHtml);
+    }
+  };
 
   // Bestehende KI-Tools für die Auswahl laden.
   useEffect(() => {
@@ -74,6 +107,17 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
         plattform: plattform.trim(),
         aboVariante: aboVariante.trim(),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      };
+    } else if (type === 'output') {
+      if (!datei) { setError('Bitte eine HTML-Datei auswählen.'); return; }
+      if (!titel.trim()) { setError('Bitte einen Titel angeben.'); return; }
+      data = {
+        titel: titel.trim(),
+        beschreibung: beschreibung.trim(),
+        erstelltMit: erstelltMit.trim(),
+        dateiname: datei.name,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        html: datei.html,
       };
     } else {
       if (!toolId) { setError('Bitte einen Generator auswählen.'); return; }
@@ -112,7 +156,11 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
     }
   };
 
-  const titelText = type === 'prompt' ? 'Prompt vorschlagen' : 'Beispiel / Aufgabe für einen Generator vorschlagen';
+  const titelText = type === 'prompt'
+    ? 'Prompt vorschlagen'
+    : type === 'output'
+      ? 'Output vorschlagen (HTML-Datei)'
+      : 'Beispiel / Aufgabe für einen Generator vorschlagen';
 
   if (done) {
     return (
@@ -139,7 +187,44 @@ export function SubmissionForm({ type, onClose }: SubmissionFormProps) {
       </p>
 
       <form onSubmit={handleSubmit}>
-        {type === 'prompt' ? (
+        {type === 'output' ? (
+          <>
+            <div style={field}>
+              <label style={labelStyle} htmlFor="output-datei">HTML-Datei *</label>
+              <input
+                id="output-datei"
+                type="file"
+                accept=".html,.htm,text/html"
+                onChange={waehleDatei}
+                style={{ ...inputStyle, padding: '0.45rem' }}
+              />
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '0.3rem 0 0' }}>
+                {datei
+                  ? `Ausgewählt: ${datei.name} (${kb(datei.groesse)})`
+                  : `Eine einzige Datei, in der alles enthalten ist (Texte, Gestaltung, Scripts, Bilder). Höchstens ${kb(OUTPUT_MAX_BYTES)}.`}
+              </p>
+            </div>
+            <div style={field}>
+              <label style={labelStyle} htmlFor="output-titel">Titel *</label>
+              <input id="output-titel" style={inputStyle} value={titel} onChange={e => setTitel(e.target.value)} placeholder="z.B. Quiz zum Kaufvertrag" />
+            </div>
+            <div style={field}>
+              <label style={labelStyle} htmlFor="output-beschreibung">Beschreibung</label>
+              <textarea id="output-beschreibung" style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={beschreibung} onChange={e => setBeschreibung(e.target.value)} placeholder="Was zeigt der Output, für wen ist er gedacht, wie setzt man ihn ein?" />
+            </div>
+            <div style={field}>
+              <label style={labelStyle} htmlFor="output-ki">Erstellt mit</label>
+              <input id="output-ki" style={inputStyle} value={erstelltMit} onChange={e => setErstelltMit(e.target.value)} placeholder="z.B. Claude, ChatGPT, Gemini" />
+            </div>
+            <div style={field}>
+              <label style={labelStyle} htmlFor="output-tags">Tags (kommagetrennt)</label>
+              <input id="output-tags" style={inputStyle} value={tags} onChange={e => setTags(e.target.value)} placeholder="z.B. abu, quiz, recht" />
+            </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-gray-500, #6b7280)', margin: '-0.3rem 0 0.9rem' }}>
+              Bitte keine Personendaten in der Datei. Die Redaktion prüft den Output vor der Freischaltung.
+            </p>
+          </>
+        ) : type === 'prompt' ? (
           <>
             <div style={field}>
               <label style={labelStyle}>Titel *</label>

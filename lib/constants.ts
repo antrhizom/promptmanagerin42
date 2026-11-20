@@ -135,6 +135,10 @@ export const PLATTFORMEN_MIT_MODELLEN: { [key: string]: string[] } = Object.entr
 
 export const EMOJIS = ['👍', '❤️', '🔥', '⭐', '💡'];
 
+// Register «Output»: Obergrenze fuer hochgeladene HTML-Dateien. Firestore erlaubt
+// hoechstens 1 MiB pro Dokument; mit Titel, Beschreibung usw. bleibt so Reserve.
+export const OUTPUT_MAX_BYTES = 800 * 1024;
+
 // Zeitraeume der Dashboard-Auswertung. Gemeinsame Quelle fuer den zeitlichen Verlauf
 // (Client) und die Seitenaufrufe je Zeitraum (Server), damit beide dasselbe Fenster
 // zeigen: die letzten N Tage der Tagesreihe bzw. alles.

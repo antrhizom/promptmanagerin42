@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { OUTPUTS, OUTPUT_TYPEN, OutputEintrag, OutputTyp, anpassPromptFuer } from '@/lib/outputs';
+import { useEffect, useState } from 'react';
+import {
+  OUTPUTS, OUTPUT_TYPEN, OutputEintrag, OutputTyp, anpassPromptFuer, kurzname,
+} from '@/lib/outputs';
+import { CommunityOutput } from '@/lib/types';
 import { trackAction } from '@/lib/analytics';
+import { useAuthContext } from '@/components/auth/AuthContext';
+import { SubmissionForm } from '@/components/submit/SubmissionForm';
 import styles from './OutputSammlung.module.css';
 
 interface OutputSammlungProps {
-  groessen: Record<string, number>; // Bytes je slug
+  groessen: Record<string, number>; // Bytes je slug (feste Outputs)
 }
 
 function formatGroesse(bytes: number | undefined): string | null {
@@ -25,10 +30,35 @@ async function kopiere(text: string): Promise<boolean> {
   }
 }
 
+// Freigeschalteter Community-Output -> gleiche Form wie die festen Outputs.
+function ausCommunity(o: CommunityOutput): OutputEintrag {
+  return {
+    id: o.id,
+    quelle: 'community',
+    slug: `${kurzname(o.titel || '')}-${o.id.slice(0, 6).toLowerCase()}`,
+    typ: o.typ || 'HTML',
+    titel: o.titel || '(ohne Titel)',
+    beschreibung: o.beschreibung || '',
+    datei: `/api/outputs/${o.id}`,
+    downloadUrl: `/api/outputs/${o.id}?download=1`,
+    tags: Array.isArray(o.tags) ? o.tags : [],
+    erstelltMit: o.erstelltMit || undefined,
+    autor: o.autorEmail || undefined,
+    groesse: o.groesse,
+  };
+}
+
 type Ansicht = 'vorschau' | 'code' | null;
 type Breite = 'breit' | 'handy';
 
-function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: OutputTyp; groesse?: number }) {
+interface KarteProps {
+  eintrag: OutputEintrag;
+  typ: OutputTyp;
+  groesse?: number;
+  onLoeschen?: () => void;
+}
+
+function OutputKarte({ eintrag, typ, groesse, onLoeschen }: KarteProps) {
   const [ansicht, setAnsicht] = useState<Ansicht>(null);
   const [breite, setBreite] = useState<Breite>('breit');
   const [code, setCode] = useState<string | null>(null);
@@ -38,6 +68,7 @@ function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: O
   const dateiName = `${eintrag.slug}.${typ.endung}`;
   const prompt = anpassPromptFuer(eintrag);
   const groesseText = formatGroesse(groesse);
+  const istCommunity = eintrag.quelle === 'community';
 
   const ladeCode = async (): Promise<string | null> => {
     if (code !== null) return code;
@@ -89,15 +120,16 @@ function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: O
     <article className={styles.karte}>
       <div className={styles.kopf}>
         <span className={styles.typBadge}>{typ.label}</span>
+        {istCommunity && <span className={styles.communityBadge}>Community</span>}
         <h3 className={styles.titel}>{eintrag.titel}</h3>
       </div>
 
-      <p className={styles.beschreibung}>{eintrag.beschreibung}</p>
+      {eintrag.beschreibung && <p className={styles.beschreibung}>{eintrag.beschreibung}</p>}
 
       <p className={styles.meta}>
         {[
           eintrag.erstelltMit ? `Erstellt mit ${eintrag.erstelltMit}` : null,
-          eintrag.autor || null,
+          eintrag.autor ? (istCommunity ? `Eingereicht von ${eintrag.autor}` : eintrag.autor) : null,
           eintrag.lizenz ? `Lizenz ${eintrag.lizenz}` : null,
           groesseText ? `${dateiName} · ${groesseText}` : dateiName,
         ]
@@ -126,7 +158,7 @@ function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: O
         )}
         <a
           className={styles.btn}
-          href={eintrag.datei}
+          href={eintrag.downloadUrl || eintrag.datei}
           download={dateiName}
           onClick={() => trackAction('output-download')}
         >
@@ -150,6 +182,11 @@ function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: O
           >
             In neuem Tab öffnen ↗
           </a>
+        )}
+        {onLoeschen && (
+          <button type="button" className={styles.btnLoeschen} onClick={onLoeschen}>
+            Löschen
+          </button>
         )}
       </div>
 
@@ -241,16 +278,62 @@ function OutputKarte({ eintrag, typ, groesse }: { eintrag: OutputEintrag; typ: O
 }
 
 export function OutputSammlung({ groessen }: OutputSammlungProps) {
-  const typenMitInhalt = OUTPUT_TYPEN.filter(typ => OUTPUTS.some(o => o.typ === typ.key));
+  const { isAdmin, getIdToken } = useAuthContext();
+  const [community, setCommunity] = useState<OutputEintrag[]>([]);
+  const [zeigeFormular, setZeigeFormular] = useState(false);
 
-  if (typenMitInhalt.length === 0) {
-    return <p className={styles.hinweis}>Noch keine Outputs hinterlegt.</p>;
-  }
+  // Freigeschaltete Community-Outputs laden (ohne HTML-Inhalt; der wird erst beim Ansehen geholt).
+  useEffect(() => {
+    let aktiv = true;
+    fetch('/api/outputs', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : { outputs: [] }))
+      .then((d: { outputs?: CommunityOutput[] }) => {
+        if (aktiv) setCommunity((d.outputs || []).map(ausCommunity));
+      })
+      .catch(() => {});
+    return () => { aktiv = false; };
+  }, []);
+
+  const loesche = async (eintrag: OutputEintrag) => {
+    if (!eintrag.id) return;
+    if (!confirm(`«${eintrag.titel}» wirklich aus dem Register Output entfernen? Das lässt sich nicht rückgängig machen.`)) return;
+    const token = await getIdToken();
+    const res = await fetch(`/api/outputs/${eintrag.id}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (res.ok) {
+      setCommunity(liste => liste.filter(e => e.id !== eintrag.id));
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert('Löschen fehlgeschlagen: ' + (err.error || res.status));
+    }
+  };
+
+  const alle = [...OUTPUTS.map(o => ({ ...o, quelle: 'redaktion' as const })), ...community];
+  const typenMitInhalt = OUTPUT_TYPEN.filter(typ => alle.some(o => o.typ === typ.key));
 
   return (
     <div className={styles.sammlung}>
+      <div className={styles.einreichen}>
+        <div>
+          <strong>Eigenen Output teilen</strong>
+          <p>Lade eine HTML-Datei hoch. Nach der Prüfung durch die Redaktion erscheint sie hier.</p>
+        </div>
+        <button
+          type="button"
+          className={styles.btnPrimaer}
+          onClick={() => { setZeigeFormular(true); trackAction('open-output-einreichen'); }}
+        >
+          + Output vorschlagen
+        </button>
+      </div>
+      {zeigeFormular && <SubmissionForm type="output" onClose={() => setZeigeFormular(false)} />}
+
+      {typenMitInhalt.length === 0 && <p className={styles.hinweis}>Noch keine Outputs hinterlegt.</p>}
+
       {typenMitInhalt.map(typ => {
-        const eintraege = OUTPUTS.filter(o => o.typ === typ.key);
+        const eintraege = alle.filter(o => o.typ === typ.key);
         return (
           <section key={typ.key} className={styles.gruppe} aria-labelledby={`output-typ-${typ.key}`}>
             <div className={styles.gruppenKopf}>
@@ -263,10 +346,11 @@ export function OutputSammlung({ groessen }: OutputSammlungProps) {
             <div className={styles.liste}>
               {eintraege.map(eintrag => (
                 <OutputKarte
-                  key={eintrag.slug}
+                  key={eintrag.id || eintrag.slug}
                   eintrag={eintrag}
                   typ={typ}
-                  groesse={groessen[eintrag.slug]}
+                  groesse={eintrag.quelle === 'community' ? eintrag.groesse : groessen[eintrag.slug]}
+                  onLoeschen={isAdmin && eintrag.quelle === 'community' ? () => loesche(eintrag) : undefined}
                 />
               ))}
             </div>

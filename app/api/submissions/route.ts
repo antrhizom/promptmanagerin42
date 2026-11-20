@@ -9,18 +9,57 @@ import {
 } from '@/lib/server/firestoreRest';
 import { verifyAdmin } from '@/lib/server/adminAuth';
 import { sendAdminEmail } from '@/lib/server/sendEmail';
+import { OUTPUT_MAX_BYTES } from '@/lib/constants';
+
+const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+
+// Output-Einreichung: nur bekannte Felder uebernehmen und die HTML-Datei pruefen.
+// Liefert entweder die bereinigten Daten oder eine Fehlermeldung.
+function pruefeOutput(data: Record<string, unknown>): { daten?: Record<string, unknown>; fehler?: string } {
+  const titel = text(data.titel, 150);
+  const html = typeof data.html === 'string' ? data.html : '';
+  if (!titel) return { fehler: 'Bitte einen Titel angeben.' };
+  if (!html.trim()) return { fehler: 'Bitte eine HTML-Datei auswählen.' };
+  const groesse = Buffer.byteLength(html, 'utf8');
+  if (groesse > OUTPUT_MAX_BYTES) {
+    return { fehler: `Die Datei ist zu gross (${Math.round(groesse / 1024)} KB, erlaubt sind ${Math.round(OUTPUT_MAX_BYTES / 1024)} KB).` };
+  }
+  if (!/<(!doctype\s+html|html|body|head|div|main|section|script|style)\b/i.test(html)) {
+    return { fehler: 'Die Datei sieht nicht nach HTML aus.' };
+  }
+  const tags = Array.isArray(data.tags)
+    ? data.tags.map(t => text(t, 40).replace(/^#/, '')).filter(Boolean).slice(0, 10)
+    : [];
+  return {
+    daten: {
+      typ: 'HTML',
+      titel,
+      beschreibung: text(data.beschreibung, 2000),
+      erstelltMit: text(data.erstelltMit, 80),
+      dateiname: text(data.dateiname, 120),
+      tags,
+      groesse,
+      html,
+    },
+  };
+}
 
 // POST: öffentlich — eine Einreichung anlegen (status immer 'pending').
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const type = String(body?.type || '');
-    if (!['prompt', 'kitool'].includes(type)) {
+    if (!['prompt', 'kitool', 'output'].includes(type)) {
       return NextResponse.json({ error: 'Ungültiger Typ.' }, { status: 400 });
     }
-    const data = body?.data;
+    let data = body?.data;
     if (!data || typeof data !== 'object') {
       return NextResponse.json({ error: 'Fehlende Daten.' }, { status: 400 });
+    }
+    if (type === 'output') {
+      const geprueft = pruefeOutput(data);
+      if (geprueft.fehler) return NextResponse.json({ error: geprueft.fehler }, { status: 400 });
+      data = geprueft.daten;
     }
     const autorEmail = typeof body?.autorEmail === 'string' ? body.autorEmail.trim().slice(0, 200) : '';
     if (!autorEmail || !autorEmail.includes('@')) {
@@ -62,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // Best-effort Benachrichtigung an Admin (Resend).
     const titel = (data.titel as string) || (data.name as string) || '(ohne Titel)';
-    const label = type === 'prompt' ? 'Prompt' : 'KI-Tool-Beispiel';
+    const label = type === 'prompt' ? 'Prompt' : type === 'output' ? 'Output (HTML)' : 'KI-Tool-Beispiel';
     const ziel = type === 'kitool' && data.toolName ? `\nFür Tool: ${data.toolName}` : '';
     await sendAdminEmail(
       `Neue Einreichung (${label}): ${titel}`,

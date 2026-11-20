@@ -9,6 +9,7 @@ export function SubmissionsReview() {
   const [subs, setSubs] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [vorschau, setVorschau] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const token = await getIdToken();
@@ -72,7 +73,14 @@ export function SubmissionsReview() {
             const titel = s.type === 'comment'
               ? `Kommentar von ${(d.userName as string) || 'Anonym'}`
               : ((d.titel as string) || (d.name as string) || '(ohne Titel)');
-            const typLabel = s.type === 'prompt' ? 'Prompt' : s.type === 'comment' ? 'Kommentar' : 'Generator-Beispiel';
+            const typLabel = s.type === 'prompt'
+              ? 'Prompt'
+              : s.type === 'comment'
+                ? 'Kommentar'
+                : s.type === 'output'
+                  ? 'Output (HTML)'
+                  : 'Generator-Beispiel';
+            const html = s.type === 'output' && typeof d.html === 'string' ? d.html : '';
             return (
               <div key={s.id} style={{ border: '1px solid var(--color-gray-100,#f3f4f6)', borderRadius: 'var(--radius-md,8px)', padding: '0.75rem 0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -97,6 +105,42 @@ export function SubmissionsReview() {
                 {d.beschreibung && <p style={{ margin: '0.35rem 0', color: 'var(--color-gray-600,#4b5563)', fontSize: '0.9rem' }}>{d.beschreibung as string}</p>}
                 {d.promptText && (
                   <pre style={{ whiteSpace: 'pre-wrap', background: 'var(--color-gray-50,#f9fafb)', padding: '0.5rem', borderRadius: '6px', fontSize: '0.8rem', maxHeight: '140px', overflow: 'auto' }}>{d.promptText as string}</pre>
+                )}
+                {s.type === 'output' && (
+                  <div style={{ margin: '0.4rem 0' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-500,#6b7280)' }}>
+                      {[
+                        (d.dateiname as string) || 'HTML-Datei',
+                        typeof d.groesse === 'number' ? `${Math.max(1, Math.round((d.groesse as unknown as number) / 1024))} KB` : null,
+                        d.erstelltMit ? `erstellt mit ${d.erstelltMit as string}` : null,
+                        Array.isArray(d.tags) && d.tags.length ? (d.tags as string[]).map(t => '#' + t).join(' ') : null,
+                      ].filter(Boolean).join(' · ')}
+                    </div>
+                    {html && (
+                      <button
+                        type="button"
+                        onClick={() => setVorschau(vorschau === s.id ? null : s.id)}
+                        aria-expanded={vorschau === s.id}
+                        style={{ marginTop: '0.45rem', padding: '0.35rem 0.8rem', background: 'var(--color-white,#fff)', border: '1px solid var(--color-gray-300,#d4d4d4)', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                      >
+                        {vorschau === s.id ? 'Vorschau schliessen' : 'Vorschau ansehen'}
+                      </button>
+                    )}
+                    {html && vorschau === s.id && (
+                      <div style={{ marginTop: '0.5rem', border: '1px solid var(--color-gray-200,#e5e7eb)', borderRadius: '8px', overflow: 'hidden' }}>
+                        <div style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem', background: 'var(--color-warning-light,#fef3c7)', color: 'var(--color-gray-700,#404040)' }}>
+                          Abgeschottete Vorschau: Scripts laufen, haben aber keinen Zugriff auf deine Anmeldung.
+                        </div>
+                        {/* srcDoc + sandbox ohne allow-same-origin: fremdes HTML erreicht weder Cookies, Speicher noch Admin-Token. */}
+                        <iframe
+                          srcDoc={html}
+                          title={`Vorschau: ${titel}`}
+                          sandbox="allow-scripts allow-forms allow-modals"
+                          style={{ display: 'block', width: '100%', height: '480px', border: 0, background: '#fff' }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
                 {s.type === 'kitool' && d.link && (
                   <a href={d.link as string} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>↗ {d.link as string}</a>
