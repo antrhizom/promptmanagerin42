@@ -14,9 +14,33 @@ export interface TimelinePoint {
 
 interface UsageTimelineProps {
   timeline: TimelinePoint[] | undefined;
-  // Zeitraum wird im Dashboard gehalten, damit auch die Seitenaufrufe darauf reagieren.
+  // Zeitraum wird im Dashboard gehalten und dort ueber ZeitraumAuswahl gesetzt,
+  // damit Kennzahlen, Listen und Verlauf denselben Zeitraum zeigen.
+  range: ZeitraumKey;
+}
+
+interface ZeitraumAuswahlProps {
   range: ZeitraumKey;
   onRangeChange: (range: ZeitraumKey) => void;
+}
+
+// Knoepfe 14 Tage / 30 Tage / 90 Tage / Alle fuer den ganzen Besucher-Bereich.
+export function ZeitraumAuswahl({ range, onRangeChange }: ZeitraumAuswahlProps) {
+  return (
+    <div className={styles.rangeButtons} role="group" aria-label="Zeitraum der Auswertung">
+      {DASHBOARD_ZEITRAEUME.map(r => (
+        <button
+          key={r.key}
+          type="button"
+          className={r.key === range ? styles.rangeButtonActive : styles.rangeButton}
+          aria-pressed={r.key === range}
+          onClick={() => onRangeChange(r.key)}
+        >
+          {r.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 const SERIES = [
@@ -97,7 +121,7 @@ function toBuckets(points: TimelinePoint[], weekly: boolean): Bucket[] {
   return weeks;
 }
 
-export function UsageTimeline({ timeline, range, onRangeChange }: UsageTimelineProps) {
+export function UsageTimeline({ timeline, range }: UsageTimelineProps) {
   const { buckets, weekly, summary } = useMemo(() => {
     const points = timeline || [];
     const days = DASHBOARD_ZEITRAEUME.find(r => r.key === range)?.days ?? null;
@@ -176,18 +200,6 @@ export function UsageTimeline({ timeline, range, onRangeChange }: UsageTimelineP
     <div className={styles.timeline}>
       <div className={styles.header}>
         <h3 className={styles.heading}>Zeitlicher Verlauf</h3>
-        <div className={styles.rangeButtons}>
-          {DASHBOARD_ZEITRAEUME.map(r => (
-            <button
-              key={r.key}
-              type="button"
-              className={r.key === range ? styles.rangeButtonActive : styles.rangeButton}
-              onClick={() => onRangeChange(r.key)}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className={styles.legend}>

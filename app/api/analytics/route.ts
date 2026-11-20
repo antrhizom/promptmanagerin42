@@ -11,10 +11,12 @@ import { DASHBOARD_ZEITRAEUME } from '@/lib/constants';
 
 const ALLOWED_TYPES = ['visit', 'function', 'action'];
 
-interface VisitRecord {
-  page: string;
-  day: string | null;
+interface EventRecord {
+  type: string;
+  name: string;
+  plattform: string;
   session?: string;
+  day: string | null;
 }
 
 interface PageStat {
@@ -23,21 +25,71 @@ interface PageStat {
   visitors: number;
 }
 
-// Seitenaufrufe je Seite: Anzahl Aufrufe und verschiedene Sitzungen.
-function aggregatePages(records: VisitRecord[]): PageStat[] {
-  const counts = new Map<string, number>();
-  const sessions = new Map<string, Set<string>>();
+interface Auswertung {
+  visitors: number;
+  visitEvents: number;
+  totalFunctionClicks: number;
+  totalActions: number;
+  functions: { name: string; plattform: string; count: number }[];
+  functionsByPlattform: { plattform: string; count: number }[];
+  actions: { name: string; count: number }[];
+  pages: PageStat[];
+}
+
+// Kennzahlen und Ranglisten fuer eine Menge von Events (alle oder ein Zeitraum).
+// Besucher und Besucher je Seite sind verschiedene Sitzungen innerhalb dieser Menge.
+function auswerten(records: EventRecord[]): Auswertung {
+  const sessions = new Set<string>();
+  let visitEvents = 0;
+  const functionCounts = new Map<string, { name: string; plattform: string; count: number }>();
+  const plattformCounts = new Map<string, number>();
+  const actionCounts = new Map<string, number>();
+  const pageCounts = new Map<string, number>();
+  const pageSessions = new Map<string, Set<string>>();
+
   for (const r of records) {
-    counts.set(r.page, (counts.get(r.page) || 0) + 1);
-    if (r.session) {
-      const set = sessions.get(r.page) || new Set<string>();
-      set.add(r.session);
-      sessions.set(r.page, set);
+    if (r.session) sessions.add(r.session);
+
+    if (r.type === 'visit') {
+      visitEvents++;
+      // Aeltere Events wurden ohne Pfad geschrieben; die laufen unter "unbekannt".
+      const page = r.name || 'unbekannt';
+      pageCounts.set(page, (pageCounts.get(page) || 0) + 1);
+      if (r.session) {
+        const set = pageSessions.get(page) || new Set<string>();
+        set.add(r.session);
+        pageSessions.set(page, set);
+      }
+    } else if (r.type === 'function') {
+      const key = `${r.plattform}||${r.name}`;
+      const entry = functionCounts.get(key) || { name: r.name, plattform: r.plattform, count: 0 };
+      entry.count++;
+      functionCounts.set(key, entry);
+      if (r.plattform) plattformCounts.set(r.plattform, (plattformCounts.get(r.plattform) || 0) + 1);
+    } else if (r.type === 'action') {
+      if (r.name) actionCounts.set(r.name, (actionCounts.get(r.name) || 0) + 1);
     }
   }
-  return Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count, visitors: sessions.get(name)?.size || 0 }))
+
+  const functions = Array.from(functionCounts.values()).sort((a, b) => b.count - a.count);
+  const actions = Array.from(actionCounts.entries())
+    .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
+
+  return {
+    visitors: sessions.size,
+    visitEvents,
+    totalFunctionClicks: functions.reduce((s, f) => s + f.count, 0),
+    totalActions: actions.reduce((s, a) => s + a.count, 0),
+    functions,
+    functionsByPlattform: Array.from(plattformCounts.entries())
+      .map(([plattform, count]) => ({ plattform, count }))
+      .sort((a, b) => b.count - a.count),
+    actions,
+    pages: Array.from(pageCounts.entries())
+      .map(([name, count]) => ({ name, count, visitors: pageSessions.get(name)?.size || 0 }))
+      .sort((a, b) => b.count - a.count),
+  };
 }
 
 // Tages-Schlüssel (YYYY-MM-DD) in Schweizer Zeit, damit der Verlauf zur
@@ -143,12 +195,7 @@ export async function GET(request: NextRequest) {
       if (!pageToken) break;
     }
 
-    const sessions = new Set<string>();
-    let visitEvents = 0;
-    const functionCounts = new Map<string, { name: string; plattform: string; count: number }>();
-    const plattformCounts = new Map<string, number>();
-    const actionCounts = new Map<string, number>();
-    const visitRecords: VisitRecord[] = [];
+    const records: EventRecord[] = [];
 
     // Zeitlicher Verlauf: pro Tag ein Eimer mit den drei Event-Typen und den
     // an diesem Tag gesehenen Sessions.
@@ -173,10 +220,10 @@ export async function GET(request: NextRequest) {
       const session = ev.session as string | undefined;
       const name = (ev.name as string | undefined) || '';
       const plattform = (ev.plattform as string | undefined) || '';
-
-      if (session) sessions.add(session);
-
       const day = toDayKey(ev.ts);
+
+      records.push({ type, name, plattform, session, day });
+
       if (day) {
         const bucket = bucketFor(day);
         if (session) bucket.sessions.add(session);
@@ -184,29 +231,7 @@ export async function GET(request: NextRequest) {
         else if (type === 'function') bucket.functions++;
         else if (type === 'action') bucket.actions++;
       }
-
-      if (type === 'visit') {
-        visitEvents++;
-        // Aeltere Events wurden ohne Pfad geschrieben; die laufen unter "unbekannt".
-        visitRecords.push({ page: name || 'unbekannt', day, session });
-      } else if (type === 'function') {
-        const key = `${plattform}||${name}`;
-        const entry = functionCounts.get(key) || { name, plattform, count: 0 };
-        entry.count++;
-        functionCounts.set(key, entry);
-        if (plattform) plattformCounts.set(plattform, (plattformCounts.get(plattform) || 0) + 1);
-      } else if (type === 'action') {
-        if (name) actionCounts.set(name, (actionCounts.get(name) || 0) + 1);
-      }
     }
-
-    const functions = Array.from(functionCounts.values()).sort((a, b) => b.count - a.count);
-    const functionsByPlattform = Array.from(plattformCounts.entries())
-      .map(([plattform, count]) => ({ plattform, count }))
-      .sort((a, b) => b.count - a.count);
-    const actions = Array.from(actionCounts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
 
     const usedDays = Array.from(dayBuckets.keys()).sort();
     const allDays = usedDays.length > 0
@@ -223,30 +248,19 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Seitenaufrufe je Zeitraum, mit demselben Fenster wie der Verlauf im Dashboard:
-    // die letzten N Tage der lueckenlosen Tagesreihe. Besucher werden pro Zeitraum
-    // eindeutig gezaehlt (nicht aus Tageswerten summiert).
-    const pages = aggregatePages(visitRecords);
-    const pagesByRange: Record<string, PageStat[]> = {};
+    // Alle Kennzahlen zusaetzlich je Zeitraum, mit demselben Fenster wie der Verlauf
+    // im Dashboard: die letzten N Tage der lueckenlosen Tagesreihe. Besucher werden
+    // pro Zeitraum eindeutig gezaehlt (nicht aus Tageswerten summiert).
+    const gesamt = auswerten(records);
+    const zeitraeume: Record<string, Auswertung> = {};
     for (const z of DASHBOARD_ZEITRAEUME) {
       const cutoff = z.days !== null && allDays.length > z.days ? allDays[allDays.length - z.days] : null;
-      pagesByRange[z.key] = cutoff
-        ? aggregatePages(visitRecords.filter(r => r.day !== null && r.day >= cutoff))
-        : pages;
+      zeitraeume[z.key] = cutoff
+        ? auswerten(records.filter(r => r.day !== null && r.day >= cutoff))
+        : gesamt;
     }
 
-    return NextResponse.json({
-      visitors: sessions.size,
-      visitEvents,
-      totalFunctionClicks: functions.reduce((s, f) => s + f.count, 0),
-      totalActions: actions.reduce((s, a) => s + a.count, 0),
-      functions,
-      functionsByPlattform,
-      actions,
-      pages,
-      pagesByRange,
-      timeline,
-    });
+    return NextResponse.json({ ...gesamt, zeitraeume, timeline });
   } catch (err) {
     console.error('[API/analytics] GET server error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

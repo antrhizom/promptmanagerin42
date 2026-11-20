@@ -8,7 +8,7 @@ import { DASHBOARD_ZEITRAEUME, ZeitraumKey } from '@/lib/constants';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
 import { WuenscheReview } from '@/components/wish/WuenscheReview';
-import { UsageTimeline, TimelinePoint } from './UsageTimeline';
+import { UsageTimeline, ZeitraumAuswahl, TimelinePoint } from './UsageTimeline';
 import styles from './StatsDashboard.module.css';
 
 interface StatsDashboardProps {
@@ -22,7 +22,8 @@ interface PageStat {
   visitors: number;
 }
 
-interface AnalyticsSummary {
+// Kennzahlen und Ranglisten fuer einen Zeitraum (oder gesamt).
+interface Kennzahlen {
   visitors: number;
   visitEvents: number;
   totalFunctionClicks: number;
@@ -31,8 +32,11 @@ interface AnalyticsSummary {
   functionsByPlattform: { plattform: string; count: number }[];
   actions: { name: string; count: number }[];
   pages?: PageStat[];
-  // Seitenaufrufe je Zeitraum (Schluessel wie DASHBOARD_ZEITRAEUME).
-  pagesByRange?: Partial<Record<ZeitraumKey, PageStat[]>>;
+}
+
+interface AnalyticsSummary extends Kennzahlen {
+  // Dieselben Kennzahlen je Zeitraum (Schluessel wie DASHBOARD_ZEITRAEUME).
+  zeitraeume?: Partial<Record<ZeitraumKey, Kennzahlen>>;
   timeline?: TimelinePoint[];
 }
 
@@ -146,11 +150,15 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
   const stats = useMemo(() => calculateStats(prompts, {}), [prompts]);
 
-  // Seitenaufrufe passend zum gewaehlten Zeitraum. Faellt auf die Gesamtzahlen zurueck,
+  // Alle Kennzahlen passend zum gewaehlten Zeitraum. Faellt auf die Gesamtzahlen zurueck,
   // falls der Server (noch) keine Aufteilung liefert.
-  const pagesImZeitraum = analytics?.pagesByRange?.[zeitraum] ?? analytics?.pages ?? [];
+  const imZeitraum: Kennzahlen | null = analytics?.zeitraeume?.[zeitraum] ?? analytics;
+  const pagesImZeitraum = imZeitraum?.pages ?? [];
   const zeitraumTage = DASHBOARD_ZEITRAEUME.find(z => z.key === zeitraum)?.days ?? null;
   const zeitraumText = zeitraumTage ? `letzte ${zeitraumTage} Tage` : 'gesamter Zeitraum';
+  const zeitraumZusatz = (
+    <span style={{ fontWeight: 400, color: 'var(--color-gray-500, #6b7280)' }}> · {zeitraumText}</span>
+  );
 
   if (loading) {
     return <div className={styles.loading}>Dashboard wird geladen...</div>;
@@ -171,7 +179,19 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
 
       {/* Besucher & Funktionen (anonymes Tracking) */}
       <div className={styles.sectionPlatform}>
-        <h2 className={styles.sectionTitle}>Besucher &amp; Klicks (ohne Login)</h2>
+        {/* Kopf mit Zeitraum-Auswahl: gilt fuer Kennzahlen, Verlauf und alle Listen */}
+        <div
+          style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+            gap: '0.5rem 1rem', marginBottom: 'var(--space-4)', paddingBottom: 'var(--space-2)',
+            borderBottom: '2px solid rgba(0, 0, 0, 0.06)',
+          }}
+        >
+          <h2 className={styles.sectionTitle} style={{ margin: 0, padding: 0, border: 0 }}>
+            Besucher &amp; Klicks (ohne Login){zeitraumZusatz}
+          </h2>
+          <ZeitraumAuswahl range={zeitraum} onRangeChange={setZeitraum} />
+        </div>
         <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
           Anonym gezaehlt: Besucher sind Browser-Sitzungen, Seitenaufrufe zaehlen die
           besuchten Seiten, Funktions-Badges sind die Klicks auf die Badges
@@ -184,46 +204,39 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
             className={styles.overviewCardBlue}
             title="Anzahl Browser-Sitzungen. Jede Sitzung bekommt eine zufaellige, anonyme Nummer, die beim Schliessen des Tabs verfaellt. Dieselbe Person an zwei Tagen zaehlt also zweimal, mehrere Seiten in derselben Sitzung nur einmal."
           >
-            <div className={styles.overviewValue}>{analytics?.visitors ?? '–'}</div>
+            <div className={styles.overviewValue}>{imZeitraum?.visitors ?? '–'}</div>
             <div className={styles.overviewLabel}>Besucher (Sessions)</div>
           </div>
           <div
             className={styles.overviewCardGreen}
-            title="Aufgerufene Seiten insgesamt, also Startseite, Gen Biblio, P-Flow und Datenschutz zusammen. Pro Sitzung und Seite wird hoechstens dreimal gezaehlt, damit Hin- und Herwechseln die Zahl nicht aufblaeht."
+            title="Aufgerufene Seiten insgesamt, also Startseite, Gen Biblio, Output, P-Flow und Datenschutz zusammen. Pro Sitzung und Seite wird hoechstens dreimal gezaehlt, damit Hin- und Herwechseln die Zahl nicht aufblaeht."
           >
-            <div className={styles.overviewValue}>{analytics?.visitEvents ?? '–'}</div>
+            <div className={styles.overviewValue}>{imZeitraum?.visitEvents ?? '–'}</div>
             <div className={styles.overviewLabel}>Seitenaufrufe</div>
           </div>
           <div
             className={styles.overviewCardAmber}
             title="Klicks auf die Badges unter «Funktionen» in einer Prompt-Karte, zum Beispiel Web-Browsing oder Bildanalyse. Diese Badges loesen nichts aus, sie zeigen nur, welche Faehigkeit der Prompt braucht. Es ist NICHT die Nutzung einer KI."
           >
-            <div className={styles.overviewValue}>{analytics?.totalFunctionClicks ?? '–'}</div>
+            <div className={styles.overviewValue}>{imZeitraum?.totalFunctionClicks ?? '–'}</div>
             <div className={styles.overviewLabel}>Funktions-Badges geklickt</div>
           </div>
           <div
             className={styles.overviewCardPurple}
             title="Alle uebrigen Interaktionen zusammen: Prompt kopieren, herunterladen, liken, Links oeffnen, filtern, Hashtags anklicken, Tipps oeffnen, P-Flow durchlaufen."
           >
-            <div className={styles.overviewValue}>{analytics?.totalActions ?? '–'}</div>
+            <div className={styles.overviewValue}>{imZeitraum?.totalActions ?? '–'}</div>
             <div className={styles.overviewLabel}>Klick-Aktionen</div>
           </div>
         </div>
 
         {/* Zeitlicher Verlauf der Nutzung */}
-        <UsageTimeline
-          timeline={analytics?.timeline}
-          range={zeitraum}
-          onRangeChange={setZeitraum}
-        />
+        <UsageTimeline timeline={analytics?.timeline} range={zeitraum} />
 
         {analytics && (analytics.pages?.length || 0) > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
-              Aufgerufene Seiten
-              <span style={{ fontWeight: 400, color: 'var(--color-gray-500, #6b7280)' }}>
-                {' '}· {zeitraumText}
-              </span>
+              Aufgerufene Seiten{zeitraumZusatz}
             </h3>
             {pagesImZeitraum.length === 0 && (
               <p className={styles.subtitle} style={{ marginTop: 0 }}>
@@ -247,13 +260,13 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
           </>
         )}
 
-        {analytics && analytics.functions.length > 0 && (
+        {imZeitraum && imZeitraum.functions.length > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
-              Angeklickte Funktions-Badges in Prompts
+              Angeklickte Funktions-Badges in Prompts{zeitraumZusatz}
             </h3>
             <div className={styles.statGrid}>
-              {analytics.functions.map(f => (
+              {imZeitraum.functions.map(f => (
                 <div
                   key={`${f.plattform}-${f.name}`}
                   className={styles.statItem}
@@ -269,13 +282,13 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
           </>
         )}
 
-        {analytics && analytics.actions.length > 0 && (
+        {imZeitraum && imZeitraum.actions.length > 0 && (
           <>
             <h3 className={styles.sectionTitle} style={{ fontSize: '1rem', marginTop: '1.25rem' }}>
-              Klick-Aktionen
+              Klick-Aktionen{zeitraumZusatz}
             </h3>
             <div className={styles.statGrid}>
-              {analytics.actions.map(a => (
+              {imZeitraum.actions.map(a => (
                 <div key={a.name} className={styles.statItem} title={`${actionHint(a.name)} (interner Name: ${a.name})`}>
                   <span className={styles.statItemName}>{actionLabel(a.name)}</span>
                   <span className={styles.statItemCount}>{a.count}</span>
