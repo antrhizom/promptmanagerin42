@@ -48,7 +48,7 @@ const SERIES = [
     key: 'visits',
     label: 'Seitenaufrufe',
     color: '#3b82f6',
-    hint: 'Aufgerufene Seiten an diesem Tag, hoechstens dreimal je Sitzung und Seite.',
+    hint: 'Aufgerufene Seiten an diesem Tag, jede Seite hoechstens einmal pro Browser.',
   },
   {
     key: 'functions',

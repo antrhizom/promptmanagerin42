@@ -6,6 +6,7 @@ import { Prompt } from '@/lib/types';
 import { calculateStats } from '@/lib/utils/statsCalculations';
 import { DASHBOARD_ZEITRAEUME, ZeitraumKey } from '@/lib/constants';
 import { useAuthContext } from '@/components/auth/AuthContext';
+import { markiereAlsIntern } from '@/lib/analytics';
 import { SubmissionsReview } from '@/components/submit/SubmissionsReview';
 import { WuenscheReview } from '@/components/wish/WuenscheReview';
 import { UsageTimeline, ZeitraumAuswahl, TimelinePoint } from './UsageTimeline';
@@ -38,6 +39,8 @@ interface AnalyticsSummary extends Kennzahlen {
   // Dieselben Kennzahlen je Zeitraum (Schluessel wie DASHBOARD_ZEITRAEUME).
   zeitraeume?: Partial<Record<ZeitraumKey, Kennzahlen>>;
   timeline?: TimelinePoint[];
+  // Anzahl ausgeblendeter Browser/Tabs der Redaktion.
+  interneBrowser?: number;
 }
 
 // Klarnamen fuer die Seitenpfade.
@@ -132,6 +135,12 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [zeitraum, setZeitraum] = useState<ZeitraumKey>('30');
 
+  // Wer das Dashboard oeffnet, gehoert zur Redaktion: Dieser Browser wird in der
+  // Besucher-Auswertung ausgeblendet und sendet ab jetzt keine Ereignisse mehr.
+  useEffect(() => {
+    markiereAlsIntern();
+  }, []);
+
   // Besucher- & Funktions-Auswertung (Admin-only, mit ID-Token).
   useEffect(() => {
     async function loadAnalytics() {
@@ -195,23 +204,24 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
           <ZeitraumAuswahl range={zeitraum} onRangeChange={setZeitraum} />
         </div>
         <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
-          Anonym gezaehlt: Besucher sind Browser-Sitzungen, Seitenaufrufe zaehlen die
-          besuchten Seiten, Funktions-Badges sind die Klicks auf die Badges
+          Anonym gezaehlt: Besucher sind verschiedene Browser, Seitenaufrufe zaehlen jede
+          Seite einmal pro Browser und Tag, Funktions-Badges sind die Klicks auf die Badges
           &laquo;Funktionen&raquo; in einem Prompt (z.&nbsp;B. Web-Browsing, Bildanalyse),
           und Klick-Aktionen sind alle uebrigen Interaktionen wie Kopieren, Filtern oder
-          Hashtags.
+          Hashtags. Besuche der Redaktion sind ausgeblendet
+          {analytics?.interneBrowser ? ` (${analytics.interneBrowser} Browser bzw. Sitzungen)` : ''}.
         </p>
         <div className={styles.overviewGrid}>
           <div
             className={styles.overviewCardBlue}
-            title="Anzahl Browser-Sitzungen. Jede Sitzung bekommt eine zufaellige, anonyme Nummer, die beim Schliessen des Tabs verfaellt. Dieselbe Person an zwei Tagen zaehlt also zweimal, mehrere Seiten in derselben Sitzung nur einmal."
+            title="Anzahl verschiedener Browser. Jeder Browser bekommt eine zufaellige, anonyme Nummer, die erhalten bleibt, bis die Website-Daten geloescht werden. Dieselbe Person an zwei Tagen zaehlt also einmal, am Handy und am Laptop zweimal. Aeltere Daten (vor der Umstellung) wurden pro Tab gezaehlt."
           >
             <div className={styles.overviewValue}>{imZeitraum?.visitors ?? '–'}</div>
-            <div className={styles.overviewLabel}>Besucher (Sessions)</div>
+            <div className={styles.overviewLabel}>Besucher (Browser)</div>
           </div>
           <div
             className={styles.overviewCardGreen}
-            title="Aufgerufene Seiten insgesamt, also Startseite, Gen Biblio, Output, P-Flow und Datenschutz zusammen. Pro Sitzung und Seite wird hoechstens dreimal gezaehlt, damit Hin- und Herwechseln die Zahl nicht aufblaeht."
+            title="Aufgerufene Seiten insgesamt, also Startseite, Gen Biblio, Output, P-Flow und Datenschutz zusammen. Jede Seite zaehlt hoechstens einmal pro Browser und Tag, damit Neuladen und Hin- und Herwechseln die Zahl nicht aufblaehen."
           >
             <div className={styles.overviewValue}>{imZeitraum?.visitEvents ?? '–'}</div>
             <div className={styles.overviewLabel}>Seitenaufrufe</div>
@@ -250,7 +260,7 @@ export function StatsDashboard({ prompts, loading }: StatsDashboardProps) {
                 <div
                   key={p.name}
                   className={styles.statItem}
-                  title={`${pageLabel(p.name)} (${p.name}): ${p.count} Aufrufe von ${p.visitors} verschiedenen Sitzungen. Liegen beide Zahlen nahe beieinander, schauen die Leute einmal vorbei; ist die linke deutlich hoeher, kehren sie innerhalb der Sitzung zurueck.`}
+                  title={`${pageLabel(p.name)} (${p.name}): ${p.count} Aufrufe (hoechstens einer pro Browser und Tag) von ${p.visitors} verschiedenen Browsern. Ist die Zahl der Aufrufe deutlich hoeher als die der Browser, kommen die Leute an mehreren Tagen wieder.`}
                 >
                   <span className={styles.statItemName}>
                     {pageLabel(p.name)} · {p.visitors} Besucher

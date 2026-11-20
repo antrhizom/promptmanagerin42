@@ -36,6 +36,36 @@ interface Auswertung {
   pages: PageStat[];
 }
 
+// Seiten, deren Aufruf einen Browser bzw. Tab als «Redaktion» kennzeichnet.
+const INTERNE_SEITEN = ['/admin', '/admin-login'];
+
+// Rohdaten bereinigen, bevor gezaehlt wird:
+// 1. Redaktion ausblenden: alle Events eines Browsers (bzw. bei aelteren Daten eines
+//    Tabs), der das Dashboard oder den Admin-Login aufgerufen oder sich als intern
+//    markiert hat (Aktion «intern»).
+// 2. Seitenaufrufe hoechstens einmal pro Browser, Seite und Tag zaehlen.
+function bereinigen(alle: EventRecord[]): { records: EventRecord[]; interneBrowser: number } {
+  const intern = new Set<string>();
+  for (const r of alle) {
+    if (!r.session) continue;
+    if ((r.type === 'visit' && INTERNE_SEITEN.includes(r.name)) || (r.type === 'action' && r.name === 'intern')) {
+      intern.add(r.session);
+    }
+  }
+  const gesehen = new Set<string>();
+  const records: EventRecord[] = [];
+  for (const r of alle) {
+    if (r.session && intern.has(r.session)) continue;
+    if (r.type === 'visit' && r.session) {
+      const schluessel = `${r.session}|${r.name || 'unbekannt'}|${r.day || '-'}`;
+      if (gesehen.has(schluessel)) continue;
+      gesehen.add(schluessel);
+    }
+    records.push(r);
+  }
+  return { records, interneBrowser: intern.size };
+}
+
 // Kennzahlen und Ranglisten fuer eine Menge von Events (alle oder ein Zeitraum).
 // Besucher und Besucher je Seite sind verschiedene Sitzungen innerhalb dieser Menge.
 function auswerten(records: EventRecord[]): Auswertung {
@@ -195,10 +225,17 @@ export async function GET(request: NextRequest) {
       if (!pageToken) break;
     }
 
-    const records: EventRecord[] = [];
+    const roh: EventRecord[] = docs.map(ev => ({
+      type: ev.type as string,
+      name: (ev.name as string | undefined) || '',
+      plattform: (ev.plattform as string | undefined) || '',
+      session: ev.session as string | undefined,
+      day: toDayKey(ev.ts),
+    }));
+    const { records, interneBrowser } = bereinigen(roh);
 
     // Zeitlicher Verlauf: pro Tag ein Eimer mit den drei Event-Typen und den
-    // an diesem Tag gesehenen Sessions.
+    // an diesem Tag gesehenen Browsern.
     interface DayBucket {
       visits: number;
       functions: number;
@@ -215,22 +252,13 @@ export async function GET(request: NextRequest) {
       return bucket;
     };
 
-    for (const ev of docs) {
-      const type = ev.type as string;
-      const session = ev.session as string | undefined;
-      const name = (ev.name as string | undefined) || '';
-      const plattform = (ev.plattform as string | undefined) || '';
-      const day = toDayKey(ev.ts);
-
-      records.push({ type, name, plattform, session, day });
-
-      if (day) {
-        const bucket = bucketFor(day);
-        if (session) bucket.sessions.add(session);
-        if (type === 'visit') bucket.visits++;
-        else if (type === 'function') bucket.functions++;
-        else if (type === 'action') bucket.actions++;
-      }
+    for (const r of records) {
+      if (!r.day) continue;
+      const bucket = bucketFor(r.day);
+      if (r.session) bucket.sessions.add(r.session);
+      if (r.type === 'visit') bucket.visits++;
+      else if (r.type === 'function') bucket.functions++;
+      else if (r.type === 'action') bucket.actions++;
     }
 
     const usedDays = Array.from(dayBuckets.keys()).sort();
@@ -260,7 +288,7 @@ export async function GET(request: NextRequest) {
         : gesamt;
     }
 
-    return NextResponse.json({ ...gesamt, zeitraeume, timeline });
+    return NextResponse.json({ ...gesamt, zeitraeume, timeline, interneBrowser });
   } catch (err) {
     console.error('[API/analytics] GET server error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
