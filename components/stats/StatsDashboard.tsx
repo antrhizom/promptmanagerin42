@@ -40,6 +40,7 @@ interface AnalyticsSummary {
 const PAGE_LABELS: Record<string, string> = {
   '/': 'Startseite (Prompts)',
   '/ki-tools': 'Gen Biblio',
+  '/output': 'Output',
   '/p-flow': 'P-Flow',
   '/datenschutz': 'Datenschutz',
   '/admin': 'Dashboard',
@@ -61,6 +62,12 @@ const ACTION_LABELS: Record<string, string> = {
   'open-kitool-beispiel': 'Beispiel eines Tools geoeffnet',
   'open-wunsch': 'Wunsch-Formular geoeffnet',
   'wunsch-gesendet': 'Wunsch abgeschickt',
+  'output-vorschau': 'Output angesehen (Vorschau)',
+  'output-neuer-tab': 'Output in neuem Tab geoeffnet',
+  'output-download': 'Output heruntergeladen',
+  'output-code-angezeigt': 'Output-Code angezeigt',
+  'output-code-kopiert': 'Output-Code kopiert',
+  'output-prompt-kopiert': 'Anpass-Prompt kopiert',
 };
 
 // Erklaerungen, die beim Hovern als Tooltip erscheinen.
@@ -77,6 +84,12 @@ const ACTION_HINTS: Record<string, string> = {
   'open-kitool-beispiel': 'Ein Beispiel innerhalb eines Werkzeugs der Gen Biblio wurde geoeffnet.',
   'open-wunsch': 'Das Formular «Gestalte mit» wurde geoeffnet.',
   'wunsch-gesendet': 'Ein Gestaltungs-Wunsch wurde tatsaechlich abgeschickt.',
+  'output-vorschau': 'Im Register Output wurde die Vorschau eines Outputs aufgeklappt.',
+  'output-neuer-tab': 'Ein Output wurde in einem eigenen Tab geoeffnet.',
+  'output-download': 'Die Datei eines Outputs wurde heruntergeladen. Bester Hinweis darauf, dass ein Output weiterverwendet wird.',
+  'output-code-angezeigt': 'Der Quellcode eines Outputs wurde aufgeklappt.',
+  'output-code-kopiert': 'Der Quellcode eines Outputs wurde in die Zwischenablage kopiert.',
+  'output-prompt-kopiert': 'Der Startprompt zum Anpassen eines Outputs per Chat-KI oder KI-Agent wurde kopiert.',
 };
 
 function actionHint(name: string): string {
