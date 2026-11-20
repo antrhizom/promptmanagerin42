@@ -46,6 +46,26 @@ export interface OutputEintrag {
 
 export const OUTPUTS: OutputEintrag[] = [
   {
+    slug: 'krankenkassen-rechner',
+    typ: 'HTML',
+    titel: 'Krankenkassen-Rechner: Was kostet mich die Grundversicherung?',
+    beschreibung:
+      'Interaktiver Rechner für die Schweizer Grundversicherung: Lernende geben ihre Gesundheitskosten ein und sehen, wie Franchise, Versicherungsmodell (Standard, Hausarzt, Telmed, HMO), Kanton, Prämienregion, Versicherer und Unfalldeckung die Jahreskosten verändern. Zeigt den Rechenweg (Franchise, Selbstbehalt, Spitalbeitrag) und ab welchen Kosten sich welche Franchise lohnt. Modellrechnung mit gerundeten Richtwerten, nennt bewusst keine Versicherer.',
+    datei: '/outputs/krankenkassen-rechner.html',
+    tags: ['krankenkasse', 'versicherung', 'finanzen', 'abu', 'rechner'],
+    erstelltMit: 'Claude',
+    anpassPrompt: [
+      'Im Anhang findest du eine HTML-Datei («Krankenkassen-Rechner»). Alle Zahlen und Texte stehen im Block DATEN am Anfang des Scripts. Passe sie für meinen Unterricht an.',
+      '',
+      '- Stand der Richtwerte: [z. B. aktuelles Jahr, neue mittlere Prämie gemäss BAG]',
+      '- Zielgruppe / Stufe: [z. B. Lernende 1. Lehrjahr]',
+      '- Ändern sollen sich: [z. B. eigene Beispieljahre, nur ein Kanton, weitere Kostenposition]',
+      '- Gleich bleiben sollen: Rechenlogik, Aufbau und Gestaltung; es werden keine Versicherer namentlich genannt',
+      '',
+      'Stelle mir zuerst Rückfragen, falls etwas unklar ist. Gib mir danach wieder eine einzige, vollständige HTML-Datei zurück (ohne externe Abhängigkeiten), die ich direkt im Browser öffnen kann.',
+    ].join('\n'),
+  },
+  {
     slug: 'prompt-check',
     typ: 'HTML',
     titel: 'Prompt-Check: Welcher Prompt ist stärker?',

@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krankenkassen-Rechner</title>
+<style>
+  :root {
+    --grund: #f3f4f1;
+    --flaeche: #ffffff;
+    --flaeche-2: #eef0ec;
+    --text: #1b2220;
+    --text-leise: #58625e;
+    --linie: #dbdfda;
+    --linie-diagramm: #c3c9c4;
+    --akzent: #0b7a64;
+    --akzent-hell: #dff1ea;
+    --akzent-text: #ffffff;
+    --praemie: #2f5f8f;
+    --franchise: #c98f1c;
+    --selbstbehalt: #bd4f3a;
+    --spital: #7a68ad;
+    --hinweis-grund: #fff5dc;
+    --hinweis-linie: #e5cc88;
+    --schatten: 0 1px 2px rgba(20, 30, 25, 0.06), 0 10px 28px -18px rgba(20, 30, 25, 0.35);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --grund: #111513;
+      --flaeche: #191e1c;
+      --flaeche-2: #222826;
+      --text: #e5ebe8;
+      --text-leise: #a2aca7;
+      --linie: #2e3532;
+      --linie-diagramm: #4a534f;
+      --akzent: #3fc3a0;
+      --akzent-hell: #163a30;
+      --akzent-text: #08190f;
+      --praemie: #6e9fd2;
+      --franchise: #e2b04c;
+      --selbstbehalt: #e0795f;
+      --spital: #a693db;
+      --hinweis-grund: #2a2412;
+      --hinweis-linie: #6a5822;
+      --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -20px rgba(0, 0, 0, 0.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --grund: #111513;
+    --flaeche: #191e1c;
+    --flaeche-2: #222826;
+    --text: #e5ebe8;
+    --text-leise: #a2aca7;
+    --linie: #2e3532;
+    --linie-diagramm: #4a534f;
+    --akzent: #3fc3a0;
+    --akzent-hell: #163a30;
+    --akzent-text: #08190f;
+    --praemie: #6e9fd2;
+    --franchise: #e2b04c;
+    --selbstbehalt: #e0795f;
+    --spital: #a693db;
+    --hinweis-grund: #2a2412;
+    --hinweis-linie: #6a5822;
+    --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -20px rgba(0, 0, 0, 0.8);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--grund);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .zahl, td, .wert, .gross { font-variant-numeric: tabular-nums; }
+
+  .seite { max-width: 1160px; margin: 0 auto; padding: 28px 18px 96px; }
+
+  /* Kopf */
+  .kopf { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .eyebrow {
+    margin: 0; font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--akzent);
+  }
+  h1 {
+    margin: 0; font-size: clamp(1.65rem, 4.4vw, 2.4rem); line-height: 1.1;
+    letter-spacing: -0.015em; text-wrap: balance;
+  }
+  .lead { margin: 0; color: var(--text-leise); max-width: 62ch; font-size: 1.04rem; }
+  .marke-modell {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--text-leise);
+    border: 1px solid var(--linie); background: var(--flaeche); border-radius: 999px; padding: 4px 12px;
+  }
+  .marke-modell::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--franchise); }
+
+  /* Raster */
+  .raster { display: grid; gap: 22px; grid-template-columns: 1fr; }
+  @media (min-width: 800px) {
+    .raster { grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); align-items: start; }
+  }
+
+  .karte {
+    background: var(--flaeche); border: 1px solid var(--linie); border-radius: 14px;
+    box-shadow: var(--schatten); padding: 18px;
+  }
+  .spalte { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+  /* Formular */
+  fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  legend {
+    padding: 0; margin-bottom: 4px; font-size: 1.05rem; font-weight: 700;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .schritt {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; flex: none;
+    background: var(--akzent); color: var(--akzent-text); font-size: 13px; font-weight: 700;
+  }
+  .feld { display: flex; flex-direction: column; gap: 6px; }
+  .feld > label, .feld-titel { font-size: 14px; font-weight: 600; }
+  .feld-hilfe { margin: 0; font-size: 13px; color: var(--text-leise); }
+  select, input[type="number"] {
+    font: inherit; color: var(--text); background: var(--flaeche);
+    border: 1px solid var(--linie); border-radius: 9px; padding: 9px 11px; width: 100%;
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible, a:focus-visible, .wahl input:focus-visible + span {
+    outline: 3px solid var(--akzent); outline-offset: 2px;
+  }
+
+  /* Auswahl-Kacheln (Radio) */
+  .wahlen { display: grid; gap: 8px; }
+  .wahlen.drei { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .wahlen.vier { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .wahl { position: relative; display: block; }
+  .wahl input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .wahl > span {
+    display: flex; flex-direction: column; gap: 2px; height: 100%;
+    border: 1px solid var(--linie); border-radius: 10px; padding: 8px 10px;
+    background: var(--flaeche); cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .wahl > span strong { font-size: 14.5px; }
+  .wahl > span small { font-size: 12.5px; color: var(--text-leise); line-height: 1.35; }
+  .wahl:hover > span { border-color: var(--akzent); }
+  .wahl input:checked + span { border-color: var(--akzent); background: var(--akzent-hell); box-shadow: inset 0 0 0 1px var(--akzent); }
+  .wahlen.franchisen .wahl > span { align-items: center; text-align: center; }
+
+  .modelle { display: flex; flex-direction: column; gap: 8px; }
+  .modelle .wahl > span { flex-direction: row; align-items: baseline; gap: 10px; }
+  .modelle .wahl > span strong { min-width: 74px; }
+  .modelle .rabatt { margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--akzent); white-space: nowrap; }
+
+  .schalter { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+  .schalter input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--akzent); flex: none; }
+  .schalter[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+
+  .hinweis {
+    margin: 0; display: flex; gap: 10px; font-size: 13.5px; line-height: 1.45;
+    background: var(--hinweis-grund); border: 1px solid var(--hinweis-linie); border-radius: 10px; padding: 10px 12px;
+  }
+  .hinweis::before {
+    content: "i"; flex: none; width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-style: italic; font-family: Georgia, serif; font-size: 13px;
+    background: var(--franchise); color: #1f1600;
+  }
+  .hinweis a { color: inherit; font-weight: 600; }
+
+  /* Kosten */
+  .szenarien { display: flex; flex-wrap: wrap; gap: 6px; }
+  .szenario {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--linie); background: var(--flaeche); color: var(--text);
+    border-radius: 999px; padding: 5px 11px;
+  }
+  .szenario:hover { border-color: var(--akzent); }
+  .szenario[aria-pressed="true"] { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+  .kostenliste { display: flex; flex-direction: column; gap: 10px; }
+  .kosten-zeile { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 4px 10px; align-items: center; }
+  .kosten-zeile label { font-size: 14px; font-weight: 600; }
+  .kosten-zeile .einheit { grid-column: 1; font-size: 12.5px; color: var(--text-leise); }
+  .kosten-zeile input { grid-column: 2; grid-row: 1 / span 2; text-align: right; }
+  .kosten-summe {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    border-top: 1px solid var(--linie); padding-top: 10px; font-weight: 700;
+  }
+
+  /* Ergebnis */
+  .gesamt { display: flex; flex-direction: column; gap: 14px; }
+  .gesamt-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px 20px; }
+  .gesamt-label { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-leise); }
+  .gross { margin: 2px 0 0; font-size: clamp(2.1rem, 5.5vw, 2.9rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  .gross small { font-size: 0.45em; font-weight: 600; color: var(--text-leise); letter-spacing: 0; }
+  .monat { text-align: right; }
+  .monat .wert { font-size: 1.35rem; font-weight: 700; }
+  .monat p { margin: 0; font-size: 13px; color: var(--text-leise); }
+
+  .stapel { display: flex; height: 18px; border-radius: 6px; overflow: hidden; background: var(--flaeche-2); gap: 2px; }
+  .stapel span { min-width: 3px; }
+  .legende { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; }
+  .legende li { display: flex; align-items: center; gap: 7px; }
+  .punkt { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .legende .wert { font-weight: 700; }
+  .kasse { margin: 0; font-size: 14px; color: var(--text-leise); }
+  .kasse strong { color: var(--text); }
+
+  h2 { margin: 0 0 4px; font-size: 1.08rem; }
+  .unterzeile { margin: 0 0 14px; font-size: 13.5px; color: var(--text-leise); }
+
+  /* Rechenweg */
+  .rechenweg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .rechenweg li {
+    display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: baseline;
+    padding: 9px 0; border-bottom: 1px dashed var(--linie); font-size: 14.5px;
+  }
+  .rechenweg li:last-child { border-bottom: 0; }
+  .rechenweg .nr { font-weight: 700; color: var(--text-leise); font-size: 13px; }
+  .rechenweg .erkl small { display: block; color: var(--text-leise); font-size: 12.5px; }
+  .rechenweg .betrag { font-weight: 700; white-space: nowrap; }
+  .rechenweg li.summe { border-top: 2px solid var(--text); border-bottom: 0; margin-top: 4px; font-size: 15.5px; }
+  .rechenweg li.summe .betrag { font-size: 1.05rem; }
+
+  /* Tabelle */
+  .tabelle-rahmen { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 470px; }
+  th, td { padding: 8px 8px; text-align: right; border-bottom: 1px solid var(--linie); white-space: nowrap; }
+  thead th { font-size: 12px; font-weight: 700; color: var(--text-leise); text-transform: uppercase; letter-spacing: 0.05em; }
+  th:first-child, td:first-child { text-align: left; }
+  tbody tr.gewaehlt { background: var(--akzent-hell); }
+  tbody tr.gewaehlt td.total { font-weight: 800; }
+  .franchise-knopf {
+    font: inherit; font-weight: 700; cursor: pointer; color: var(--text);
+    background: transparent; border: 1px solid var(--linie); border-radius: 7px; padding: 3px 10px; min-width: 64px; text-align: left;
+  }
+  .franchise-knopf:hover { border-color: var(--akzent); }
+  tr.gewaehlt .franchise-knopf { border-color: var(--akzent); background: var(--flaeche); }
+  .chip {
+    display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px;
+    background: var(--akzent); color: var(--akzent-text); font-size: 11.5px; font-weight: 700; vertical-align: 1px;
+  }
+  .erkenntnis {
+    margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--flaeche-2);
+    font-size: 14px; line-height: 1.5;
+  }
+
+  /* Diagramm */
+  .diagramm-rahmen { overflow-x: auto; }
+  .diagramm { display: block; width: 100%; min-width: 440px; height: auto; }
+  .diagramm text { font-family: inherit; font-size: 11.5px; fill: var(--text-leise); }
+  .diagramm .achse-titel { font-weight: 600; }
+  .diagramm .linien-label { font-weight: 700; font-size: 11.5px; }
+
+  /* Modelle */
+  .modell-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .modell-liste li { display: grid; grid-template-columns: 78px minmax(0, 1fr) 140px; gap: 10px; align-items: center; font-size: 14px; }
+  .modell-liste .name { font-weight: 600; }
+  .modell-liste .balken { height: 12px; background: var(--flaeche-2); border-radius: 4px; overflow: hidden; }
+  .modell-liste .balken span { display: block; height: 100%; background: var(--linie-diagramm); border-radius: 4px; }
+  .modell-liste li.gewaehlt .balken span { background: var(--akzent); }
+  .modell-liste li.gewaehlt .name { color: var(--akzent); }
+  .modell-liste .wert { text-align: right; font-weight: 700; }
+  .modell-liste .wert small { display: block; font-weight: 500; font-size: 12px; color: var(--text-leise); }
+
+  /* Fuss */
+  .fuss { margin-top: 26px; font-size: 13px; color: var(--text-leise); max-width: 78ch; display: flex; flex-direction: column; gap: 6px; }
+  .fuss p { margin: 0; }
+  .fuss a { color: var(--akzent); font-weight: 600; }
+
+  /* Mobile Summenleiste */
+  .mini {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 18px calc(10px + env(safe-area-inset-bottom));
+    background: var(--flaeche); border-top: 1px solid var(--linie); box-shadow: 0 -8px 24px -18px rgba(0, 0, 0, 0.5);
+    font-size: 14px;
+  }
+  .mini strong { font-size: 1.15rem; }
+  .mini span { color: var(--text-leise); }
+  @media (min-width: 800px) { .mini { display: none; } .seite { padding-bottom: 40px; } }
+
+  .nur-vorleser { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  @media (max-width: 420px) {
+    .wahlen.vier { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .modell-liste li { grid-template-columns: 64px minmax(0, 1fr) 118px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="seite">
+  <header class="kopf">
+    <p class="eyebrow">Grundversicherung Schweiz</p>
+    <h1 id="titel">Was kostet mich die Krankenkasse?</h1>
+    <p class="lead" id="einleitung"></p>
+    <span class="marke-modell">Modellrechnung mit Richtwerten, keine Offerte</span>
+  </header>
+
+  <div class="raster">
+    <form class="spalte" id="formular" autocomplete="off">
+      <section class="karte">
+        <fieldset>
+          <legend><span class="schritt">1</span>Person und Wohnort</legend>
+          <div class="feld">
+            <label for="alter">Altersgruppe</label>
+            <select id="alter"></select>
+          </div>
+          <div class="feld">
+            <label for="kanton">Kanton</label>
+            <select id="kanton"></select>
+            <p class="feld-hilfe" id="kanton-hilfe"></p>
+          </div>
+          <div class="feld">
+            <label for="region">Wohnort im Kanton</label>
+            <select id="region"></select>
+            <p class="feld-hilfe">Viele Kantone sind in bis zu drei Prämienregionen eingeteilt. In der Stadt ist die Prämie meist am höchsten. Kantone mit nur einer Region: «Stadt» wählen.</p>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="karte">
+        <fieldset>
+          <legend><span class="schritt">2</span>Versicherung</legend>
+          <div class="feld">
+            <span class="feld-titel" id="franchise-titel">Franchise pro Jahr</span>
+            <div class="wahlen vier franchisen" id="franchisen" role="radiogroup" aria-labelledby="franchise-titel"></div>
+            <p class="feld-hilfe">So viel deiner Gesundheitskosten bezahlst du jedes Jahr zuerst selbst. Je höher die Franchise, desto tiefer die Prämie.</p>
+          </div>
+          <div class="feld">
+            <span class="feld-titel" id="modell-titel">Versicherungsmodell</span>
+            <div class="modelle" id="modelle" role="radiogroup" aria-labelledby="modell-titel"></div>
+          </div>
+          <div class="feld">
+            <span class="feld-titel" id="versicherer-titel">Versicherer im Prämienvergleich</span>
+            <div class="wahlen drei" id="versicherer" role="radiogroup" aria-labelledby="versicherer-titel"></div>
+            <p class="hinweis" id="versicherer-hinweis"></p>
+          </div>
+          <label class="schalter" id="unfall-schalter">
+            <input type="checkbox" id="unfall">
+            <span id="unfall-text"></span>
+          </label>
+        </fieldset>
+      </section>
+
+      <section class="karte">
+        <fieldset>
+          <legend><span class="schritt">3</span>Gesundheitskosten pro Jahr</legend>
+          <div class="feld">
+            <span class="feld-titel" id="szenario-titel">Beispieljahr übernehmen</span>
+            <div class="szenarien" id="szenarien" role="group" aria-labelledby="szenario-titel"></div>
+          </div>
+          <div class="kostenliste" id="kostenliste"></div>
+          <div class="kosten-summe">
+            <span>Gesundheitskosten total</span>
+            <span class="zahl" id="kosten-total"></span>
+          </div>
+        </fieldset>
+      </section>
+    </form>
+
+    <main class="spalte" id="ergebnis">
+      <section class="karte gesamt" aria-labelledby="gesamt-label">
+        <div class="gesamt-kopf">
+          <div>
+            <p class="gesamt-label" id="gesamt-label">Deine Kosten pro Jahr</p>
+            <p class="gross" id="total"></p>
+          </div>
+          <div class="monat">
+            <span class="wert" id="monat"></span>
+            <p>Prämie pro Monat</p>
+          </div>
+        </div>
+        <div class="stapel" id="stapel" aria-hidden="true"></div>
+        <ul class="legende" id="legende"></ul>
+        <p class="kasse" id="kasse"></p>
+        <p class="nur-vorleser" aria-live="polite" id="ansage"></p>
+      </section>
+
+      <section class="karte" aria-labelledby="weg-titel">
+        <h2 id="weg-titel">So rechnet die Krankenkasse</h2>
+        <p class="unterzeile">Deine Gesundheitskosten werden in dieser Reihenfolge aufgeteilt.</p>
+        <ol class="rechenweg" id="rechenweg"></ol>
+      </section>
+
+      <section class="karte" aria-labelledby="vergleich-titel">
+        <h2 id="vergleich-titel">Franchisen im Vergleich</h2>
+        <p class="unterzeile">Gleiche Gesundheitskosten, andere Franchise. Klick auf eine Franchise, um sie zu wählen.</p>
+        <div class="tabelle-rahmen">
+          <table>
+            <thead>
+              <tr><th scope="col">Franchise</th><th scope="col">Prämie / Monat</th><th scope="col">Prämien / Jahr</th><th scope="col">Selbst bezahlt</th><th scope="col">Total / Jahr</th></tr>
+            </thead>
+            <tbody id="tabelle"></tbody>
+          </table>
+        </div>
+        <p class="erkenntnis" id="erkenntnis"></p>
+      </section>
+
+      <section class="karte" aria-labelledby="diagramm-titel">
+        <h2 id="diagramm-titel">Wann lohnt sich welche Franchise?</h2>
+        <p class="unterzeile" id="diagramm-text">Jahreskosten total je nach Höhe der Gesundheitskosten. Hervorgehoben ist deine gewählte Franchise.</p>
+        <div class="diagramm-rahmen" id="diagramm"></div>
+      </section>
+
+      <section class="karte" aria-labelledby="modelle-titel">
+        <h2 id="modelle-titel">Modelle im Vergleich</h2>
+        <p class="unterzeile">Monatsprämie mit deiner Franchise. Die Rabatte sind typische Werte und je nach Versicherer verschieden.</p>
+        <ul class="modell-liste" id="modell-liste"></ul>
+      </section>
+    </main>
+  </div>
+
+  <footer class="fuss" id="fuss"></footer>
+</div>
+
+<div class="mini" id="mini" aria-hidden="true">
+  <span>Total pro Jahr</span>
+  <strong class="zahl" id="mini-total"></strong>
+  <span id="mini-monat"></span>
+</div>
+
+<script>
+/* ============================================================
+   HIER ANPASSEN
+   Alle Zahlen und Texte stehen in DATEN. Die Richtwerte sind
+   gerundet und dienen der Veranschaulichung, sie ersetzen keine
+   Offerte. Echte Prämien: www.priminfo.admin.ch
+   ============================================================ */
+const DATEN = {
+  stand: "gerundete Richtwerte, Stand 2026",
+  einleitung: "Gib deine Gesundheitskosten ein und sieh, wie Franchise, Versicherungsmodell, Wohnort und Versicherer deine Jahreskosten verändern.",
+
+  // Monatsprämie Erwachsene, Franchise 300, Standardmodell, mit Unfall,
+  // Schweizer Durchschnitt (gerundet).
+  grundpraemie: 390,
+
+  altersgruppen: [
+    { key: "kind", label: "Kind (0–18 Jahre)", faktor: 0.27,
+      franchisen: [0, 100, 200, 300, 400, 500, 600], ordentlicheFranchise: 0,
+      selbstbehaltMax: 350, spitalbeitrag: false, unfallAbwahl: false },
+    { key: "jung", label: "Junge Erwachsene (19–25 Jahre)", faktor: 0.72,
+      franchisen: [300, 500, 1000, 1500, 2000, 2500], ordentlicheFranchise: 300,
+      selbstbehaltMax: 700, spitalbeitrag: false, unfallAbwahl: true },
+    { key: "erw", label: "Erwachsene (ab 26 Jahren)", faktor: 1,
+      franchisen: [300, 500, 1000, 1500, 2000, 2500], ordentlicheFranchise: 300,
+      selbstbehaltMax: 700, spitalbeitrag: true, unfallAbwahl: true }
+  ],
+  startAlter: "jung",
+
+  // Einteilung der Kantone nach Prämienniveau (gerundet, zur Veranschaulichung).
+  kantonsNiveaus: [
+    { label: "sehr günstig", faktor: 0.78, kantone: ["Appenzell Innerrhoden", "Nidwalden", "Uri", "Zug"] },
+    { label: "günstig", faktor: 0.88, kantone: ["Appenzell Ausserrhoden", "Glarus", "Graubünden", "Luzern", "Obwalden", "Schwyz", "St. Gallen", "Thurgau", "Wallis"] },
+    { label: "mittel", faktor: 1.0, kantone: ["Aargau", "Freiburg", "Schaffhausen", "Solothurn", "Zürich"] },
+    { label: "teuer", faktor: 1.1, kantone: ["Basel-Landschaft", "Bern", "Jura", "Neuenburg", "Waadt"] },
+    { label: "sehr teuer", faktor: 1.2, kantone: ["Basel-Stadt", "Genf", "Tessin"] }
+  ],
+  startKanton: "Zürich",
+
+  praemienregionen: [
+    { label: "Stadt (Prämienregion 1)", faktor: 1.0 },
+    { label: "Agglomeration (Prämienregion 2)", faktor: 0.94 },
+    { label: "Land (Prämienregion 3)", faktor: 0.89 }
+  ],
+
+  modelle: [
+    { key: "standard", label: "Standard", rabatt: 0, text: "Freie Arztwahl, direkt zu jeder Praxis." },
+    { key: "hausarzt", label: "Hausarzt", rabatt: 0.12, text: "Zuerst immer zur eigenen Hausarztpraxis." },
+    { key: "telmed", label: "Telmed", rabatt: 0.14, text: "Vor dem Arztbesuch zuerst telefonische Beratung." },
+    { key: "hmo", label: "HMO", rabatt: 0.18, text: "Zuerst ins Gesundheitszentrum des Versicherers." }
+  ],
+
+  versicherer: [
+    { label: "eher günstig", text: "unter dem Durchschnitt", faktor: 0.88 },
+    { label: "Durchschnitt", text: "mittlere Prämie", faktor: 1.0 },
+    { label: "eher teuer", text: "über dem Durchschnitt", faktor: 1.12 }
+  ],
+  startVersicherer: 1,
+  versichererHinweis: "Die Leistungen der Grundversicherung sind gesetzlich bei allen Krankenversicherern gleich. Trotzdem verlangen sie in derselben Region unterschiedliche Prämien. Der Versicherer ist darum ein wichtiger Kostenfaktor. Dieser Rechner nennt bewusst keine Versicherer. Echte Prämien vergleichst du auf <a href=\"https://www.priminfo.admin.ch\" target=\"_blank\" rel=\"noopener noreferrer\">priminfo.admin.ch</a>, dem Prämienrechner des Bundes. Wechseln ist jedes Jahr möglich: Die Kündigung muss bis 30. November beim bisherigen Versicherer eintreffen.",
+
+  unfallText: "Ich arbeite mindestens 8 Stunden pro Woche beim gleichen Arbeitgeber. Dann bin ich über ihn gegen Unfall versichert und kann die Unfalldeckung in der Krankenkasse ausschliessen (rund 7 % tiefere Prämie).",
+  unfallTextKind: "Kinder sind über die Krankenkasse gegen Unfall versichert; ein Ausschluss ist nicht möglich.",
+  unfallAnteil: 0.07,
+
+  franchiseRabattAnteil: 0.7, // Rabatt höchstens 70 % des zusätzlich getragenen Risikos
+  mindestPraemieAnteil: 0.5,  // Prämie mindestens 50 % der Prämie mit ordentlicher Franchise
+  selbstbehaltSatz: 0.1,
+  spitalbeitragProTag: 15,
+
+  kosten: [
+    { key: "arzt", label: "Arztbesuche", einheit: "Anzahl, je ca. CHF 150", preis: 150 },
+    { key: "medi", label: "Medikamente", einheit: "CHF pro Jahr", preis: 1 },
+    { key: "physio", label: "Physiotherapie", einheit: "Sitzungen, je ca. CHF 55", preis: 55 },
+    { key: "notfall", label: "Notfall im Spital, ohne Übernachtung", einheit: "Anzahl, je ca. CHF 450", preis: 450 },
+    { key: "spital", label: "Spitalaufenthalt", einheit: "Tage, Kassenanteil je ca. CHF 1'000", preis: 1000 }
+  ],
+
+  szenarien: [
+    { label: "Kaum krank", mengen: { arzt: 1, medi: 40, physio: 0, notfall: 0, spital: 0 } },
+    { label: "Typisches Jahr", mengen: { arzt: 4, medi: 300, physio: 0, notfall: 1, spital: 0 } },
+    { label: "Chronisch krank", mengen: { arzt: 10, medi: 2400, physio: 9, notfall: 0, spital: 0 } },
+    { label: "Operation mit Spital", mengen: { arzt: 6, medi: 300, physio: 12, notfall: 1, spital: 4 } }
+  ],
+  startSzenario: 1,
+
+  fuss: [
+    "Modellrechnung zu Lernzwecken mit gerundeten Richtwerten. Sie ersetzt keine Offerte: Prämien unterscheiden sich je nach Versicherer, Kanton, Prämienregion und Jahr.",
+    "Echte Prämien aller Versicherer: <a href=\"https://www.priminfo.admin.ch\" target=\"_blank\" rel=\"noopener noreferrer\">priminfo.admin.ch</a> (Bundesamt für Gesundheit).",
+    "Wer wenig verdient, hat Anspruch auf Prämienverbilligung. Zuständig ist der Wohnkanton.",
+    "Spitalbeitrag: Erwachsene ab 26 Jahren zahlen CHF 15 pro Spitaltag. Kinder und junge Erwachsene in Ausbildung sind davon befreit."
+  ]
+};
+/* ===================== ENDE ANPASSEN ===================== */
+
+const ganz = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 0 });
+const rappen = new Intl.NumberFormat("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const chf = (n) => "CHF " + ganz.format(Math.round(n));
+const chf2 = (n) => "CHF " + rappen.format(Math.round(n * 20) / 20); // auf 5 Rappen gerundet
+const zahl = (n) => ganz.format(Math.round(n));
+const el = (id) => document.getElementById(id);
+const formular = el("formular");
+
+const KANTONE = [];
+DATEN.kantonsNiveaus.forEach((n) => n.kantone.forEach((k) => KANTONE.push({ name: k, faktor: n.faktor, niveau: n.label })));
+
+/* ---------- Formular aufbauen ---------- */
+function baueFormular() {
+  el("einleitung").textContent = DATEN.einleitung;
+
+  el("alter").innerHTML = DATEN.altersgruppen
+    .map((a) => `<option value="${a.key}"${a.key === DATEN.startAlter ? " selected" : ""}>${a.label}</option>`).join("");
+
+  el("kanton").innerHTML = DATEN.kantonsNiveaus.map((n) =>
+    `<optgroup label="Prämienniveau ${n.label}">` +
+    n.kantone.map((k) => `<option${k === DATEN.startKanton ? " selected" : ""}>${k}</option>`).join("") +
+    "</optgroup>").join("");
+
+  el("region").innerHTML = DATEN.praemienregionen
+    .map((r, i) => `<option value="${i}">${r.label}</option>`).join("");
+
+  el("modelle").innerHTML = DATEN.modelle.map((m, i) => `
+    <label class="wahl"><input type="radio" name="modell" value="${m.key}"${i === 0 ? " checked" : ""}>
+      <span><strong>${m.label}</strong><small>${m.text}</small><span class="rabatt">${m.rabatt ? "ca. −" + Math.round(m.rabatt * 100) + " %" : "Referenz"}</span></span>
+    </label>`).join("");
+
+  el("versicherer").innerHTML = DATEN.versicherer.map((v, i) => `
+    <label class="wahl"><input type="radio" name="versicherer" value="${i}"${i === DATEN.startVersicherer ? " checked" : ""}>
+      <span><strong>${v.label}</strong><small>${v.text}</small></span>
+    </label>`).join("");
+  el("versicherer-hinweis").innerHTML = `<span>${DATEN.versichererHinweis}</span>`;
+
+  el("szenarien").innerHTML = DATEN.szenarien
+    .map((s, i) => `<button type="button" class="szenario" data-szenario="${i}" aria-pressed="false">${s.label}</button>`).join("");
+
+  const start = DATEN.szenarien[DATEN.startSzenario].mengen;
+  el("kostenliste").innerHTML = DATEN.kosten.map((k) => `
+    <div class="kosten-zeile">
+      <label for="kosten-${k.key}">${k.label}</label>
+      <span class="einheit">${k.einheit}</span>
+      <input type="number" id="kosten-${k.key}" min="0" step="1" inputmode="numeric" value="${start[k.key] || 0}">
+    </div>`).join("");
+
+  el("fuss").innerHTML = DATEN.fuss.map((t) => `<p>${t}</p>`).join("") + `<p>Stand: ${DATEN.stand}.</p>`;
+
+  baueFranchisen(DATEN.altersgruppen.find((a) => a.key === DATEN.startAlter));
+}
+
+function baueFranchisen(alter, gewuenscht) {
+  const wahl = alter.franchisen.includes(gewuenscht) ? gewuenscht : alter.ordentlicheFranchise;
+  const box = el("franchisen");
+  box.className = "wahlen franchisen " + (alter.franchisen.length > 6 ? "vier" : "drei");
+  box.innerHTML = alter.franchisen.map((f) => `
+    <label class="wahl"><input type="radio" name="franchise" value="${f}"${f === wahl ? " checked" : ""}>
+      <span><strong>${zahl(f)}</strong></span>
+    </label>`).join("");
+}
+
+/* ---------- Zustand lesen ---------- */
+function lies() {
+  const alter = DATEN.altersgruppen.find((a) => a.key === el("alter").value);
+  const kanton = KANTONE.find((k) => k.name === el("kanton").value);
+  const region = DATEN.praemienregionen[Number(el("region").value)];
+  const versicherer = DATEN.versicherer[Number(formular.elements.versicherer.value)];
+  const modell = DATEN.modelle.find((m) => m.key === formular.elements.modell.value);
+  const franchise = Number(formular.elements.franchise.value);
+  const unfallAus = alter.unfallAbwahl && el("unfall").checked;
+  const mengen = {};
+  DATEN.kosten.forEach((k) => { mengen[k.key] = Math.max(0, Number(el("kosten-" + k.key).value) || 0); });
+  return { alter, kanton, region, versicherer, modell, franchise, unfallAus, mengen };
+}
+
+/* ---------- Rechnen ---------- */
+function gesundheitskosten(z) {
+  return DATEN.kosten.reduce((s, k) => s + z.mengen[k.key] * k.preis, 0);
+}
+
+// Monatsprämie mit ordentlicher Franchise im Standardmodell.
+function grundpraemie(z) {
+  return DATEN.grundpraemie * z.alter.faktor * z.kanton.faktor * z.region.faktor *
+    z.versicherer.faktor * (z.unfallAus ? 1 - DATEN.unfallAnteil : 1);
+}
+
+function praemie(z, franchise, modell) {
+  const p0 = grundpraemie(z);
+  const rabatt = (DATEN.franchiseRabattAnteil * (franchise - z.alter.ordentlicheFranchise)) / 12;
+  const mitFranchise = Math.max(p0 - rabatt, DATEN.mindestPraemieAnteil * p0);
+  return mitFranchise * (1 - modell.rabatt);
+}
+
+function beteiligung(alter, franchise, kosten) {
+  const ausFranchise = Math.min(kosten, franchise);
+  const rest = Math.max(kosten - franchise, 0);
+  const selbstbehalt = Math.min(rest * DATEN.selbstbehaltSatz, alter.selbstbehaltMax);
+  return { ausFranchise, rest, selbstbehalt };
+}
+
+function spitalbeitrag(z) {
+  return z.alter.spitalbeitrag ? (z.mengen.spital || 0) * DATEN.spitalbeitragProTag : 0;
+}
+
+function rechne(z, franchise = z.franchise, modell = z.modell) {
+  const monat = praemie(z, franchise, modell);
+  const kosten = gesundheitskosten(z);
+  const b = beteiligung(z.alter, franchise, kosten);
+  const spital = spitalbeitrag(z);
+  const praemienJahr = monat * 12;
+  const selbst = b.ausFranchise + b.selbstbehalt + spital;
+  return {
+    monat, praemienJahr, kosten, spital, selbst, ...b,
+    total: praemienJahr + selbst,
+    kasse: Math.max(0, kosten - b.ausFranchise - b.selbstbehalt - spital)
+  };
+}
+
+// Ab welchen Gesundheitskosten ist die tiefste Franchise günstiger als die höchste?
+function grenzwert(z) {
+  const fs = z.alter.franchisen;
+  const tief = fs[0];
+  const hoch = fs[fs.length - 1];
+  const pTief = praemie(z, tief, z.modell) * 12;
+  const pHoch = praemie(z, hoch, z.modell) * 12;
+  const total = (p, f, k) => { const b = beteiligung(z.alter, f, k); return p + b.ausFranchise + b.selbstbehalt; };
+  for (let k = 0; k <= 60000; k += 10) {
+    if (total(pTief, tief, k) < total(pHoch, hoch, k)) return { tief, hoch, kosten: k };
+  }
+  return null;
+}
+
+/* ---------- Darstellen ---------- */
+function zeige() {
+  const z = lies();
+  const r = rechne(z);
+
+  // Kopfzahlen
+  el("total").innerHTML = `${chf(r.total)} <small>pro Jahr</small>`;
+  el("monat").textContent = chf2(r.monat);
+  el("mini-total").textContent = chf(r.total);
+  el("mini-monat").textContent = chf2(r.monat) + " / Monat";
+  el("kosten-total").textContent = chf(r.kosten);
+  el("ansage").textContent = `Kosten pro Jahr ${chf(r.total)}, Prämie pro Monat ${chf2(r.monat)}.`;
+
+  // Kantonshinweis und Unfall-Schalter
+  const abweichung = Math.round(Math.abs(z.kanton.faktor - 1) * 100);
+  el("kanton-hilfe").textContent = `Prämienniveau ${z.kanton.niveau}: ` + (abweichung === 0
+    ? "etwa Schweizer Durchschnitt."
+    : `rund ${abweichung} % ${z.kanton.faktor < 1 ? "unter" : "über"} dem Schweizer Durchschnitt.`);
+  const unfall = el("unfall");
+  unfall.disabled = !z.alter.unfallAbwahl;
+  if (!z.alter.unfallAbwahl) unfall.checked = false;
+  el("unfall-schalter").setAttribute("aria-disabled", String(!z.alter.unfallAbwahl));
+  el("unfall-text").textContent = z.alter.unfallAbwahl ? DATEN.unfallText : DATEN.unfallTextKind;
+
+  // Aufteilung als Balken
+  const teile = [
+    { label: "Prämien", wert: r.praemienJahr, farbe: "var(--praemie)" },
+    { label: "Franchise", wert: r.ausFranchise, farbe: "var(--franchise)" },
+    { label: "Selbstbehalt", wert: r.selbstbehalt, farbe: "var(--selbstbehalt)" },
+    { label: "Spitalbeitrag", wert: r.spital, farbe: "var(--spital)" }
+  ].filter((t) => t.wert > 0);
+  el("stapel").innerHTML = teile.map((t) => `<span style="flex:${t.wert} 1 0;background:${t.farbe}"></span>`).join("");
+  el("legende").innerHTML = teile.map((t) =>
+    `<li><span class="punkt" style="background:${t.farbe}"></span>${t.label} <span class="wert zahl">${chf(t.wert)}</span></li>`).join("");
+  el("kasse").innerHTML = r.kosten > 0
+    ? `Von deinen Gesundheitskosten (${chf(r.kosten)}) übernimmt die Krankenkasse <strong>${chf(r.kasse)}</strong>.`
+    : "Ohne Gesundheitskosten bezahlst du nur die Prämien.";
+
+  // Rechenweg
+  const sbMax = z.alter.selbstbehaltMax;
+  el("rechenweg").innerHTML = [
+    ["1", "Gesundheitskosten im Jahr", "Summe aus Schritt 3", chf(r.kosten)],
+    ["2", "Franchise", `Die ersten ${chf(z.franchise)} bezahlst du selbst.`, chf(r.ausFranchise)],
+    ["3", "Selbstbehalt", `10 % der restlichen ${chf(r.rest)}, höchstens ${chf(sbMax)} pro Jahr.`, chf(r.selbstbehalt)],
+    ["4", "Spitalbeitrag", z.alter.spitalbeitrag ? `CHF ${DATEN.spitalbeitragProTag} pro Spitaltag.` : "Entfällt für Kinder und junge Erwachsene in Ausbildung.", chf(r.spital)],
+    ["5", "Prämien", `12 × ${chf2(r.monat)}, unabhängig davon, ob du krank bist.`, chf(r.praemienJahr)]
+  ].map(([nr, titel, text, betrag]) =>
+    `<li><span class="nr">${nr}</span><span class="erkl">${titel}<small>${text}</small></span><span class="betrag zahl">${betrag}</span></li>`).join("") +
+    `<li class="summe"><span class="nr"></span><span class="erkl"><strong>Du bezahlst total</strong><small>Schritte 2 bis 5</small></span><span class="betrag zahl">${chf(r.total)}</span></li>`;
+
+  // Franchisen-Tabelle
+  const zeilen = z.alter.franchisen.map((f) => ({ f, r: rechne(z, f) }));
+  const minimum = Math.min(...zeilen.map((x) => x.r.total));
+  el("tabelle").innerHTML = zeilen.map(({ f, r: rr }) => `
+    <tr class="${f === z.franchise ? "gewaehlt" : ""}">
+      <td><button type="button" class="franchise-knopf" data-franchise="${f}" aria-pressed="${f === z.franchise}">${zahl(f)}</button></td>
+      <td>${chf2(rr.monat)}</td>
+      <td>${chf(rr.praemienJahr)}</td>
+      <td>${chf(rr.selbst)}</td>
+      <td class="total">${chf(rr.total)}${rr.total - minimum < 0.5 ? '<span class="chip">am günstigsten</span>' : ""}</td>
+    </tr>`).join("");
+
+  const beste = zeilen.find((x) => x.r.total - minimum < 0.5);
+  const g = grenzwert(z);
+  let text = beste.f === z.franchise
+    ? `Bei deinen Gesundheitskosten ist Franchise ${zahl(beste.f)} die günstigste Wahl.`
+    : `Bei deinen Gesundheitskosten wäre Franchise ${zahl(beste.f)} am günstigsten: Du würdest ${chf(rechne(z).total - beste.r.total)} pro Jahr sparen.`;
+  if (g) {
+    const rund = Math.round(g.kosten / 100) * 100;
+    text += ` Faustregel für deine Einstellungen: Bis rund ${chf(rund)} Gesundheitskosten pro Jahr fährst du mit Franchise ${zahl(g.hoch)} günstiger, darüber mit Franchise ${zahl(g.tief)}.`;
+  }
+  el("erkenntnis").textContent = text;
+
+  // Diagramm und Modelle
+  el("diagramm").innerHTML = diagramm(z, r, g);
+  el("diagramm-text").textContent = "Jahreskosten total je nach Höhe der Gesundheitskosten. Hervorgehoben ist deine gewählte Franchise." +
+    (g ? ` In der grauen Fläche (bis rund ${chf(Math.round(g.kosten / 100) * 100)}) ist Franchise ${zahl(g.hoch)} günstiger als Franchise ${zahl(g.tief)}.` : "");
+  const modelle = DATEN.modelle.map((m) => ({ m, monat: praemie(z, z.franchise, m) }));
+  const maxMonat = Math.max(...modelle.map((x) => x.monat));
+  const standard = modelle[0].monat;
+  el("modell-liste").innerHTML = modelle.map(({ m, monat }) => `
+    <li class="${m.key === z.modell.key ? "gewaehlt" : ""}">
+      <span class="name">${m.label}</span>
+      <span class="balken"><span style="width:${(monat / maxMonat) * 100}%"></span></span>
+      <span class="wert zahl">${chf2(monat)}<small>${m.rabatt ? "spart " + chf((standard - monat) * 12) + " pro Jahr" : "Referenz"}</small></span>
+    </li>`).join("");
+
+  // Aktives Beispieljahr markieren
+  document.querySelectorAll(".szenario").forEach((b) => {
+    const s = DATEN.szenarien[Number(b.dataset.szenario)];
+    const gleich = DATEN.kosten.every((k) => (s.mengen[k.key] || 0) === z.mengen[k.key]);
+    b.setAttribute("aria-pressed", String(gleich));
+  });
+}
+
+function schritt(roh) {
+  const exp = Math.pow(10, Math.floor(Math.log10(roh)));
+  const m = roh / exp;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * exp;
+}
+
+function diagramm(z, r, g) {
+  const W = 620, H = 290, L = 56, R = 104, T = 22, B = 46;
+  const iw = W - L - R, ih = H - T - B;
+  const kosten = r.kosten;
+  const xSchritt = schritt(Math.max(8000, kosten * 1.25) / 4);
+  const xmax = Math.ceil(Math.max(8000, kosten * 1.25) / xSchritt) * xSchritt;
+  const fs = z.alter.franchisen;
+
+  const linien = fs.map((f) => {
+    const pj = praemie(z, f, z.modell) * 12;
+    const tot = (k) => { const b = beteiligung(z.alter, f, k); return pj + b.ausFranchise + b.selbstbehalt + r.spital; };
+    const xs = [...new Set([0, f, f + z.alter.selbstbehaltMax / DATEN.selbstbehaltSatz, xmax])]
+      .filter((x) => x >= 0 && x <= xmax).sort((a, b) => a - b);
+    return { f, tot, punkte: xs.map((x) => [x, tot(x)]) };
+  });
+
+  const yRoh = Math.max(...linien.map((l) => l.tot(xmax)));
+  const ySchritt = schritt(yRoh / 4);
+  const ymax = Math.ceil(yRoh / ySchritt) * ySchritt;
+  const sx = (x) => L + (x / xmax) * iw;
+  const sy = (y) => T + ih - (y / ymax) * ih;
+
+  let s = `<svg class="diagramm" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="diagramm-titel diagramm-beschreibung">`;
+  s += `<desc id="diagramm-beschreibung">Liniendiagramm: Jahreskosten total für jede Franchise, abhängig von den Gesundheitskosten von 0 bis ${chf(xmax)}.${g ? " Die Linien der tiefsten und der höchsten Franchise kreuzen sich bei rund " + chf(Math.round(g.kosten / 100) * 100) + "." : ""}</desc>`;
+
+  for (let y = 0; y <= ymax + 0.1; y += ySchritt) {
+    s += `<line x1="${L}" x2="${L + iw}" y1="${sy(y)}" y2="${sy(y)}" stroke="var(--linie)" stroke-width="1"/>`;
+    s += `<text x="${L - 8}" y="${sy(y) + 4}" text-anchor="end">${zahl(y)}</text>`;
+  }
+  for (let x = 0; x <= xmax + 0.1; x += xSchritt) {
+    s += `<text x="${sx(x)}" y="${T + ih + 18}" text-anchor="middle">${zahl(x)}</text>`;
+  }
+  s += `<text class="achse-titel" x="${L + iw / 2}" y="${H - 4}" text-anchor="middle">Gesundheitskosten pro Jahr in CHF</text>`;
+  s += `<text class="achse-titel" x="${L - 8}" y="${T - 8}" text-anchor="end">CHF</text>`;
+
+  if (g && g.kosten <= xmax) {
+    const gx = sx(g.kosten);
+    s += `<rect x="${L}" y="${T}" width="${gx - L}" height="${ih}" fill="var(--flaeche-2)" opacity="0.7"/>`;
+  }
+
+  const pfad = (l) => "M" + l.punkte.map(([x, y]) => `${sx(x).toFixed(1)} ${sy(y).toFixed(1)}`).join(" L");
+  const gewaehlt = linien.find((l) => l.f === z.franchise);
+  linien.filter((l) => l !== gewaehlt).forEach((l) => {
+    s += `<path d="${pfad(l)}" fill="none" stroke="var(--linie-diagramm)" stroke-width="1.6"><title>Franchise ${zahl(l.f)}</title></path>`;
+  });
+  s += `<path d="${pfad(gewaehlt)}" fill="none" stroke="var(--akzent)" stroke-width="3.2" stroke-linejoin="round"><title>Franchise ${zahl(gewaehlt.f)} (gewählt)</title></path>`;
+
+  // Beschriftung am rechten Rand: gewählte, tiefste und höchste Franchise
+  const zuBeschriften = [...new Set([fs[0], fs[fs.length - 1], z.franchise])]
+    .map((f) => { const l = linien.find((x) => x.f === f); return { f, y: sy(l.tot(xmax)), gewaehlt: f === z.franchise }; })
+    .sort((a, b) => a.y - b.y);
+  for (let i = 1; i < zuBeschriften.length; i++) {
+    if (zuBeschriften[i].y - zuBeschriften[i - 1].y < 14) zuBeschriften[i].y = zuBeschriften[i - 1].y + 14;
+  }
+  zuBeschriften.forEach((b) => {
+    s += `<text class="linien-label" x="${L + iw + 8}" y="${b.y + 4}" style="fill:${b.gewaehlt ? "var(--akzent)" : "var(--text-leise)"}">Franchise ${zahl(b.f)}</text>`;
+  });
+
+  // Markierung der eigenen Kosten
+  if (kosten <= xmax) {
+    const mx = sx(kosten);
+    const my = sy(gewaehlt.tot(kosten));
+    s += `<line x1="${mx}" x2="${mx}" y1="${T}" y2="${T + ih}" stroke="var(--text)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+    s += `<circle cx="${mx}" cy="${my}" r="5.5" fill="var(--flaeche)" stroke="var(--akzent)" stroke-width="3"/>`;
+    const anker = mx < L + 60 ? "start" : mx > L + iw - 60 ? "end" : "middle";
+    s += `<text x="${mx + (anker === "start" ? 4 : anker === "end" ? -4 : 0)}" y="${T - 8}" text-anchor="${anker}" style="fill:var(--text);font-weight:700">deine Kosten</text>`;
+  }
+  s += "</svg>";
+  return s;
+}
+
+/* ---------- Ereignisse ---------- */
+formular.addEventListener("input", (e) => {
+  if (e.target.id === "alter") {
+    const vorher = Number(formular.elements.franchise.value);
+    baueFranchisen(DATEN.altersgruppen.find((a) => a.key === e.target.value), vorher);
+  }
+  zeige();
+});
+formular.addEventListener("change", zeige);
+formular.addEventListener("submit", (e) => e.preventDefault());
+
+el("szenarien").addEventListener("click", (e) => {
+  const knopf = e.target.closest(".szenario");
+  if (!knopf) return;
+  const s = DATEN.szenarien[Number(knopf.dataset.szenario)];
+  DATEN.kosten.forEach((k) => { el("kosten-" + k.key).value = s.mengen[k.key] || 0; });
+  zeige();
+});
+
+el("tabelle").addEventListener("click", (e) => {
+  const knopf = e.target.closest(".franchise-knopf");
+  if (!knopf) return;
+  const radio = formular.querySelector(`input[name="franchise"][value="${knopf.dataset.franchise}"]`);
+  if (radio) { radio.checked = true; zeige(); }
+});
+
+baueFormular();
+zeige();
+</script>
+</body>
+</html>
